@@ -56,6 +56,7 @@ class Group(GroupBase, table=True):
     resources: List["Resource"] = Relationship(back_populates="group")
     chat_messages: List["ChatMessage"] = Relationship(back_populates="group")
     meetings: List["Meeting"] = Relationship(back_populates="group")
+    cards: List["WorkspaceCard"] = Relationship(back_populates="group")  # UC039: Cards
     tasks: List["Task"] = Relationship(back_populates="group")
 
 
@@ -166,12 +167,31 @@ class CheckpointSubmission(SQLModel, table=True):
     checkpoint: Checkpoint = Relationship(back_populates="submissions")
 
 
+class WorkspaceCard(SQLModel, table=True):
+    """Workspace Cards (Kanban columns) - UC039"""
+    __tablename__ = "workspace_cards"
+    
+    id: Optional[int] = Field(default=None, primary_key=True)
+    group_id: int = Field(foreign_key="groups.id")
+    title: str = Field(max_length=100)  # "To Do", "In Progress", "Done"
+    description: Optional[str] = None
+    position: int = Field(default=0)  # Order of cards in workspace
+    color: Optional[str] = Field(default="#3498db")  # Card color
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    # Relationships
+    group: Group = Relationship(back_populates="cards")
+    tasks: List["Task"] = Relationship(back_populates="card")
+
+
 class Task(SQLModel, table=True):
-    """Tasks in group workspace - Nhiệm vụ"""
+    """Tasks in group workspace - Nhiệm vụ (UC039)"""
     __tablename__ = "tasks"
     
     id: Optional[int] = Field(default=None, primary_key=True)
     group_id: int = Field(foreign_key="groups.id")
+    card_id: Optional[int] = Field(default=None, foreign_key="workspace_cards.id")  # Link to Card
     title: str = Field(max_length=200)
     description: Optional[str] = None
     status: str = Field(default="todo")  # todo, in_progress, done
@@ -181,10 +201,11 @@ class Task(SQLModel, table=True):
     created_by: int = Field(foreign_key="users.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    parent_task_id: Optional[int] = Field(default=None, foreign_key="tasks.id")
+    parent_task_id: Optional[int] = Field(default=None, foreign_key="tasks.id")  # For subtasks
     
     # Relationships
     group: Group = Relationship(back_populates="tasks")
+    card: Optional["WorkspaceCard"] = Relationship(back_populates="tasks")
     subtasks: List["Task"] = Relationship(
         back_populates="parent_task",
         sa_relationship_kwargs={"remote_side": "Task.id"}

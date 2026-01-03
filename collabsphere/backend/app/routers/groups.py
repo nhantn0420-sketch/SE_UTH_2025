@@ -246,6 +246,102 @@ async def update_group(
     return GroupResponse(**group.dict(), member_count=member_count, progress_percentage=0.0)
 
 
+@router.post("/{group_id}/pick-project/{project_id}", response_model=ResponseMessage)
+async def pick_project_for_group(
+    group_id: int,
+    project_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_lecturer)
+):
+    """
+    UC006: Lecturer picks/assigns a specific approved project to a team.
+    This is different from class-level project assignment.
+    Automatically creates group milestones from project milestones.
+    """
+    # Verify group exists
+    group = session.get(Group, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Verify lecturer owns the class
+    cls = session.get(Class, group.class_id)
+    if not cls:
+        raise HTTPException(status_code=404, detail="Class not found")
+    
+    if cls.lecturer_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Can only pick projects for groups in your classes")
+    
+    # Verify project exists and is approved
+    project = session.get(Project, project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    if project.status != "approved":
+        raise HTTPException(status_code=400, detail="Can only pick approved projects")
+    
+    # Check if project is assigned to this class
+    from app.models.academic import ClassProject
+    class_project = session.exec(
+        select(ClassProject).where(
+            ClassProject.class_id == cls.id,
+            ClassProject.project_id == project_id
+        )
+    ).first()
+    
+    if not class_project:
+        raise HTTPException(
+            status_code=400, 
+            detail="Project must be assigned to the class first before picking for a team"
+        )
+    
+    # Update group's project
+    old_project_id = group.project_id
+    group.project_id = project_id
+    group.updated_at = datetime.utcnow()
+    session.add(group)
+    
+    # If changing project, clear old milestones
+    if old_project_id and old_project_id != project_id:
+        old_milestones = session.exec(
+            select(GroupMilestone).where(GroupMilestone.group_id == group_id)
+        ).all()
+        for om in old_milestones:
+            session.delete(om)
+    
+    # Auto-create group milestones from project milestones
+    milestones = session.exec(
+        select(ProjectMilestone).where(
+            ProjectMilestone.project_id == project_id
+        ).order_by(ProjectMilestone.order)
+    ).all()
+    
+    for milestone in milestones:
+        # Check if already exists
+        existing = session.exec(
+            select(GroupMilestone).where(
+                GroupMilestone.group_id == group_id,
+                GroupMilestone.milestone_id == milestone.id
+            )
+        ).first()
+        
+        if not existing:
+            gm = GroupMilestone(
+                group_id=group_id,
+                milestone_id=milestone.id,
+                is_completed=False
+            )
+            session.add(gm)
+    
+    session.commit()
+    
+    # TODO: Send notification to group members
+    
+    return ResponseMessage(
+        message=f"Project '{project.title}' successfully picked for group '{group.name}'. "
+                f"{len(milestones)} milestones created."
+    )
+
+
 # ==================== GROUP MEMBERS ====================
 
 @router.get("/{group_id}/members")
@@ -569,6 +665,213 @@ async def get_group_progress(
     }
 
 
+# ==================== WORKSPACE CARDS (UC039) ====================
+
+@router.get("/{group_id}/cards")
+async def get_workspace_cards(
+    group_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    UC039: Get all workspace cards for a group.
+    Returns cards with their tasks in hierarchical structure.
+    """
+    group = session.get(Group, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Import WorkspaceCard here to avoid circular import
+    from app.models.group import WorkspaceCard
+    
+    cards = session.exec(
+        select(WorkspaceCard)
+        .where(WorkspaceCard.group_id == group_id)
+        .order_by(WorkspaceCard.position)
+    ).all()
+    
+    result = []
+    for card in cards:
+        # Get tasks for this card
+        tasks = session.exec(
+            select(Task)
+            .where(Task.card_id == card.id, Task.parent_task_id == None)
+            .order_by(Task.created_at)
+        ).all()
+        
+        card_data = {
+            "id": card.id,
+            "title": card.title,
+            "description": card.description,
+            "position": card.position,
+            "color": card.color,
+            "tasks": [
+                {
+                    "id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "status": task.status,
+                    "priority": task.priority,
+                    "assigned_to": task.assigned_to,
+                    "due_date": task.due_date,
+                    "subtask_count": len(task.subtasks) if hasattr(task, 'subtasks') else 0
+                }
+                for task in tasks
+            ],
+            "task_count": len(tasks)
+        }
+        result.append(card_data)
+    
+    return result
+
+
+@router.post("/{group_id}/cards")
+async def create_workspace_card(
+    group_id: int,
+    title: str,
+    description: Optional[str] = None,
+    color: Optional[str] = "#3498db",
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    UC039: Create a new workspace card (Kanban column).
+    Students (team members) or Lecturer can create cards.
+    """
+    group = session.get(Group, group_id)
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Verify membership or lecturer
+    if current_user.role == UserRole.STUDENT:
+        member = session.exec(
+            select(GroupMember).where(
+                GroupMember.group_id == group_id,
+                GroupMember.user_id == current_user.id
+            )
+        ).first()
+        if not member:
+            raise HTTPException(status_code=403, detail="Not a member of this group")
+    elif current_user.role == UserRole.LECTURER:
+        cls = session.get(Class, group.class_id)
+        if cls.lecturer_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Get next position
+    from app.models.group import WorkspaceCard
+    max_position = session.exec(
+        select(func.max(WorkspaceCard.position)).where(WorkspaceCard.group_id == group_id)
+    ).one() or 0
+    
+    card = WorkspaceCard(
+        group_id=group_id,
+        title=title,
+        description=description,
+        color=color,
+        position=max_position + 1
+    )
+    
+    session.add(card)
+    session.commit()
+    session.refresh(card)
+    
+    return card
+
+
+@router.patch("/cards/{card_id}")
+async def update_workspace_card(
+    card_id: int,
+    title: Optional[str] = None,
+    description: Optional[str] = None,
+    color: Optional[str] = None,
+    position: Optional[int] = None,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    UC039: Update a workspace card.
+    """
+    from app.models.group import WorkspaceCard
+    card = session.get(WorkspaceCard, card_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+    
+    # Verify access
+    group = session.get(Group, card.group_id)
+    if current_user.role == UserRole.STUDENT:
+        member = session.exec(
+            select(GroupMember).where(
+                GroupMember.group_id == group.id,
+                GroupMember.user_id == current_user.id
+            )
+        ).first()
+        if not member:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    if title:
+        card.title = title
+    if description is not None:
+        card.description = description
+    if color:
+        card.color = color
+    if position is not None:
+        card.position = position
+    
+    card.updated_at = datetime.utcnow()
+    session.add(card)
+    session.commit()
+    session.refresh(card)
+    
+    return card
+
+
+@router.delete("/cards/{card_id}", response_model=ResponseMessage)
+async def delete_workspace_card(
+    card_id: int,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    UC039: Delete a workspace card.
+    Note: This will also delete all tasks in the card.
+    """
+    from app.models.group import WorkspaceCard
+    card = session.get(WorkspaceCard, card_id)
+    if not card:
+        raise HTTPException(status_code=404, detail="Card not found")
+    
+    # Verify access (leader or lecturer)
+    group = session.get(Group, card.group_id)
+    if current_user.role == UserRole.STUDENT:
+        member = session.exec(
+            select(GroupMember).where(
+                GroupMember.group_id == group.id,
+                GroupMember.user_id == current_user.id,
+                GroupMember.role == GroupRole.LEADER
+            )
+        ).first()
+        if not member:
+            raise HTTPException(status_code=403, detail="Only group leader can delete cards")
+    elif current_user.role == UserRole.LECTURER:
+        cls = session.get(Class, group.class_id)
+        if cls.lecturer_id != current_user.id:
+            raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Delete all tasks in this card first
+    tasks = session.exec(select(Task).where(Task.card_id == card_id)).all()
+    for task in tasks:
+        # Delete subtasks
+        subtasks = session.exec(select(Task).where(Task.parent_task_id == task.id)).all()
+        for subtask in subtasks:
+            session.delete(subtask)
+        session.delete(task)
+    
+    session.delete(card)
+    session.commit()
+    
+    return ResponseMessage(message="Card deleted successfully")
+
+
 # ==================== CHECKPOINTS ====================
 
 @router.get("/{group_id}/checkpoints")
@@ -699,6 +1002,7 @@ async def create_task(
     group_id: int,
     title: str,
     description: Optional[str] = None,
+    card_id: Optional[int] = None,  # UC039: Link task to card
     priority: str = "medium",
     assigned_to: Optional[int] = None,
     due_date: Optional[datetime] = None,
@@ -707,7 +1011,9 @@ async def create_task(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Create a task in group workspace.
+    UC039: Create a task in group workspace.
+    Can optionally link to a workspace card.
+    If parent_task_id is provided, creates a subtask.
     """
     # Verify membership
     member = session.exec(
@@ -720,8 +1026,16 @@ async def create_task(
     if not member and current_user.role not in [UserRole.LECTURER, UserRole.HEAD]:
         raise HTTPException(status_code=403, detail="Not a member of this group")
     
+    # Verify card exists if provided
+    if card_id:
+        from app.models.group import WorkspaceCard
+        card = session.get(WorkspaceCard, card_id)
+        if not card or card.group_id != group_id:
+            raise HTTPException(status_code=404, detail="Card not found or doesn't belong to this group")
+    
     task = Task(
         group_id=group_id,
+        card_id=card_id,  # UC039: Link to card
         title=title,
         description=description,
         priority=priority,

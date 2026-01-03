@@ -1,0 +1,210 @@
+@startuml
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+rectangle "CollabSphere System" {
+  ' Actors
+  actor Admin as "Admin"
+  actor Staff as "Staff"
+  actor "Head Department" as HD
+  actor Lecturer as "Lecturer"
+  actor Student as "Student"
+
+  ' Shared Use Cases
+  usecase "Use AI Assistance" as UAI
+  usecase "Notification System" as NS
+
+  ' Admin Use Cases
+  usecase "Manage Accounts" as AdminMA
+  usecase "View All Accounts" as AdminVAA
+  usecase "Deactivate Accounts" as AdminDA
+  usecase "View System Reports" as AdminVSR
+  usecase "Dashboard" as AdminDB
+
+  Admin --> AdminMA
+  Admin --> AdminVSR
+  AdminVAA --|> AdminMA
+  AdminDA --|> AdminMA
+  AdminMA ..> AdminVSR : <<include>>
+  AdminVSR ..> AdminDB : <<extend>>
+
+  ' Staff Use Cases
+  usecase "Manage Subjects & Syllabus" as StaffMSS
+  usecase "Import Files for Subjects/Syllabus" as StaffIFSS
+  usecase "View/Edit Subjects/Syllabus" as StaffVESS
+  usecase "Manage Classes" as StaffMC
+  usecase "Import Files for Classes" as StaffIFC
+  usecase "View/Edit Classes" as StaffVEC
+  usecase "Assign Lecturer/Students to Classes" as StaffALC
+  usecase "Manage Accounts" as StaffMA
+  usecase "Import Files for Lecturer/Student Accounts" as StaffIFLSA
+  usecase "View/Edit Accounts" as StaffVEA
+
+  Staff --> StaffMSS
+  Staff --> StaffMC
+  Staff --> StaffMA
+  StaffIFSS --|> StaffMSS
+  StaffVESS --|> StaffMSS
+  StaffIFC --|> StaffMC
+  StaffVEC --|> StaffMC
+  StaffALC --|> StaffMC
+  StaffIFLSA --|> StaffMA
+  StaffVEA --|> StaffMA
+  StaffMC ..> StaffMA : <<include>>
+
+  ' Head Department Use Cases
+  usecase "Manage Projects" as HDMP
+  usecase "View All Projects" as HDVAP
+  usecase "Approve/Deny Pending Projects" as HDADPP
+  usecase "Update Approved Projects" as HDUAP
+  usecase "Assign Projects to Classes" as HDAPTC
+  usecase "View Classes" as HDVC
+  usecase "View Class Details" as HDVCD
+  usecase "View Subjects & Syllabus" as HDVSS
+  usecase "View Details" as HDVD
+
+  HD --> HDMP
+  HD --> HDVC
+  HD --> HDVSS
+  HDVAP --|> HDMP
+  HDADPP --|> HDMP
+  HDUAP --|> HDMP
+  HDAPTC --|> HDMP
+  HDVCD --|> HDVC
+  HDVD --|> HDVSS
+  HDMP ..> HDVSS : <<include>>
+  HDMP ..> HDVC : <<extend>>
+
+  ' Lecturer Use Cases
+  usecase "Manage Projects" as LecMP
+  usecase "Create Projects" as LecCP
+  usecase "Manage Own Projects" as LecMOP
+  usecase "Submit Pending Projects" as LecSPP
+  usecase "Assign Projects to Classes" as LecAPTC
+  usecase "Pick Projects for Teams" as LecPPT
+  usecase "Manage Classes" as LecMC
+  usecase "View Assigned Classes" as LecVAC
+  usecase "Manage Resources for Classes" as LecMRC
+  usecase "Manage Teams & Workspaces" as LecMTW
+  usecase "Create/Manage Teams" as LecCMT
+  usecase "Manage Team Members" as LecMTM
+  usecase "Monitor Team Progress" as LecMTP
+  usecase "Monitor Member Contributions" as LecMMC
+  usecase "Manage Team Milestones" as LecMTMil
+  usecase "Create/Manage Milestones Questions" as LecCMMQ
+  usecase "View Team Workspaces" as LecVTW
+  usecase "Manage Checkpoints" as LecMCP
+  usecase "Manage Communication" as LecMComm
+  usecase "Chat with Teams" as LecCWT
+  usecase "Call/Schedule Meetings" as LecCSM
+  usecase "Use Real-time Tools" as LecURT
+  usecase "Evaluation & Feedback" as LecEF
+  usecase "Evaluate Teams/Members" as LecETM
+  usecase "Evaluate Milestones Answers" as LecEMA
+  usecase "Evaluate Checkpoints Submissions" as LecECS
+  usecase "View Peer Evaluations" as LecVPE
+  usecase "Manage Resources" as LecMR
+  usecase "Manage Files/Docs for Classes/Teams" as LecMFD
+
+  Lecturer --> LecMP
+  Lecturer --> LecMC
+  Lecturer --> LecMTW
+  Lecturer --> LecMComm
+  Lecturer --> LecEF
+  Lecturer --> UAI
+  Lecturer --> LecMR
+  LecCP --|> LecMP
+  LecMOP --|> LecMP
+  LecSPP --|> LecMP
+  LecAPTC --|> LecMP
+  LecPPT --|> LecMP
+  LecVAC --|> LecMC
+  LecMRC --|> LecMC
+  LecCMT --|> LecMTW
+  LecMTM --|> LecMTW
+  LecMTP --|> LecMTW
+  LecMMC --|> LecMTW
+  LecMTMil --|> LecMTW
+  LecCMMQ --|> LecMTW
+  LecVTW --|> LecMTW
+  LecCWT --|> LecMComm
+  LecCSM --|> LecMComm
+  LecURT --|> LecMComm
+  LecETM --|> LecEF
+  LecEMA --|> LecEF
+  LecECS --|> LecEF
+  LecVPE --|> LecEF
+  LecMFD --|> LecMR
+  LecMP ..> UAI : <<include>>
+  LecMTW ..> LecMCP : <<extend>>
+  LecMTW ..> LecMR : <<include>>
+  LecMComm ..> NS : <<include>>
+  LecEF ..> LecMTP : <<extend>>
+  LecMR ..> NS : <<include>>
+  LecMTW ..> UAI : <<include>>
+  LecMC ..> LecMTW : <<include>>
+
+  ' Student Use Cases
+  usecase "View Classes & Teams" as StuVCT
+  usecase "View Assigned Classes/Teams" as StuVACT
+  usecase "View Subjects/Syllabus" as StuVSS
+  usecase "View Milestones/Checkpoints" as StuVMC
+  usecase "Manage Teams & Workspaces" as StuMTW
+  usecase "Monitor Team Progress" as StuMTP
+  usecase "Monitor Member Contributions" as StuMMC
+  usecase "Mark Done Milestones/Checkpoints" as StuMDMC
+  usecase "Create/Manage Checkpoints" as StuCMC
+  usecase "Submit Checkpoints" as StuSC
+  usecase "Create/Manage Cards/Tasks/Subtasks" as StuCMCTS
+  usecase "Answer Milestones Questions" as StuAMQ
+  usecase "Manage Communication" as StuMComm
+  usecase "Chat with Teams" as StuCWT
+  usecase "Call/Schedule Meetings" as StuCSM
+  usecase "Use Real-time Tools" as StuURT
+  usecase "Evaluation & Feedback" as StuEF
+  usecase "Evaluate Other Members" as StuEOM
+  usecase "Evaluate Milestones Answers" as StuEMA
+  usecase "View Evaluations/Feedback" as StuVEF
+  usecase "Manage Resources" as StuMR
+  usecase "Manage Files/Docs for Teams" as StuMFDT
+
+  Student --> StuVCT
+  Student --> StuMTW
+  Student --> StuMComm
+  Student --> StuEF
+  Student --> UAI
+  Student --> StuMR
+  StuVACT --|> StuVCT
+  StuVSS --|> StuVCT
+  StuVMC --|> StuVCT
+  StuMTP --|> StuMTW
+  StuMMC --|> StuMTW
+  StuMDMC --|> StuMTW
+  StuCMC --|> StuMTW
+  StuSC --|> StuMTW
+  StuCMCTS --|> StuMTW
+  StuAMQ --|> StuMTW
+  StuCWT --|> StuMComm
+  StuCSM --|> StuMComm
+  StuURT --|> StuMComm
+  StuEOM --|> StuEF
+  StuEMA --|> StuEF
+  StuVEF --|> StuEF
+  StuMFDT --|> StuMR
+  StuMTW ..> UAI : <<include>>
+  StuMTW ..> StuCMC : <<extend>>
+  StuMTW ..> StuMR : <<include>>
+  StuMComm ..> NS : <<include>>
+  StuEF ..> StuMMC : <<extend>>
+  StuMR ..> NS : <<include>>
+
+  ' Shared Associations
+  Lecturer --> NS
+  Student --> NS
+  Lecturer --> UAI
+  Student --> UAI
+}
+@enduml

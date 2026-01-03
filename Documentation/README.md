@@ -27,12 +27,69 @@ Tài liệu đồ án được chia thành các file riêng biệt để dễ qu
 | `05-Testing.md` | Test plan, test cases, test reports | ~25 trang | ⏳ Cần viết |
 | `06-UserGuides.md` | Hướng dẫn sử dụng cho 5 roles | ~35 trang | ⏳ Cần viết |
 
-### 📋 **Hỗ trợ**
+### 📋 **Hỗ trợ & Implementation**
 
 | File | Mô tả | Mục đích |
 |------|-------|----------|
 | [`NOTES-TODO.md`](NOTES-TODO.md) | Danh sách công việc cần làm | 📌 **ĐỌC ĐẦU TIÊN** |
+| [`ACTION_PLAN.md`](ACTION_PLAN.md) | Kế hoạch hành động chi tiết | Planning |
+| [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md) | Báo cáo đánh giá | Evaluation |
+| **[`ROLES_AND_PERMISSIONS.md`](ROLES_AND_PERMISSIONS.md)** | ⭐ **MỚI** Phân quyền chi tiết 4 roles | Implementation Reference |
+| **[`USE_CASE_IMPLEMENTATION_MAP.md`](USE_CASE_IMPLEMENTATION_MAP.md)** | ⭐ **MỚI** Map 42 use cases → code | Implementation Guide |
+| **[`IMPLEMENTATION_PROGRESS.md`](IMPLEMENTATION_PROGRESS.md)** | ⭐ **MỚI** Tracking progress Phase 1-4 | Progress Tracking |
+| **[`IMPLEMENTATION_SUMMARY_JAN3.md`](IMPLEMENTATION_SUMMARY_JAN3.md)** | ⭐ **MỚI** Tóm tắt công việc 3/1/2026 | Daily Summary |
 | `README.md` | File này - hướng dẫn sử dụng | Tổng quan |
+
+---
+
+## 🆕 **TÀI LIỆU MỚI - IMPLEMENTATION GUIDES** (Ngày 3/1/2026)
+
+### **1. ROLES_AND_PERMISSIONS.md** (17KB)
+**Nội dung:**
+- ✅ Chi tiết permissions cho Student, Lecturer, Head, Staff
+- ✅ Map permissions với Use Case IDs
+- ✅ Permission matrix table (50+ rows)
+- ✅ Authentication & authorization code
+- ✅ Team Leader special permissions
+
+**Sử dụng khi:**
+- Cần hiểu phân quyền hệ thống
+- Implement role-based access control
+- Verify permissions cho từng feature
+
+### **2. USE_CASE_IMPLEMENTATION_MAP.md** (35KB)
+**Nội dung:**
+- ✅ Map cả 42 use cases → implementation
+- ✅ Từng UC có: Status, Files, Line numbers, Endpoints
+- ✅ Coverage: 93% implemented (39/42)
+- ✅ Detailed analysis của 3 use cases còn thiếu
+- ✅ Frontend + Backend mapping
+
+**Sử dụng khi:**
+- Cần tìm code cho 1 use case cụ thể
+- Verify implementation vs requirements
+- Onboarding developers mới
+
+### **3. IMPLEMENTATION_PROGRESS.md** (12KB)
+**Nội dung:**
+- ✅ Phase 1-4 detailed tasks với checkboxes
+- ✅ Progress by phase & priority
+- ✅ Immediate next steps với commands
+- ✅ Blockers & risks
+- ✅ Timeline estimates
+
+**Sử dụng khi:**
+- Daily standup meetings
+- Sprint planning
+- Tracking remaining work
+
+### **4. IMPLEMENTATION_SUMMARY_JAN3.md** (10KB)
+**Tóm tắt công việc ngày 3/1/2026:**
+- ✅ Added WorkspaceCard model (UC039)
+- ✅ Implemented Pick Project for Team (UC006)
+- ✅ Database migration completed
+- ✅ 64KB documentation created
+- ✅ System now 93% matches use case diagram!
 
 ---
 
