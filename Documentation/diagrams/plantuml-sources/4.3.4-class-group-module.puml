@@ -1,0 +1,305 @@
+@startuml 4.3.4-class-group-module
+!theme plain
+skinparam linetype ortho
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 9
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #2196F3
+    BorderThickness 2
+    HeaderBackgroundColor #E3F2FD
+    FontStyle bold
+    FontSize 11
+    AttributeFontSize 8
+    AttributeFontName Courier New
+}
+
+skinparam enum {
+    BackgroundColor #FFFFFF
+    BorderColor #1976D2
+    BorderThickness 1
+    HeaderBackgroundColor #BBDEFB
+    FontSize 9
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 7
+}
+
+title <size:15><b>Group Module - Class Diagram</b></size>\n<size:10>Groups, Milestones, Checkpoints, Tasks & Kanban Board</size>
+
+' ============================================
+' GROUP ENTITIES
+' ============================================
+class Group <<Entity>> {
+    - id: int <<PK>>
+    - name: string <<UNIQUE>>
+    - class_id: int <<FK>>
+    - project_id: int? <<FK>>
+    - status: GroupStatus
+    - created_at: datetime
+    __
+    + add_member(student, role): GroupMember
+    + set_leader(member): void
+    + select_project(project): void
+    + create_task(title, assignee): Task
+    + get_progress(): float
+}
+
+class GroupMember <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - student_id: int <<FK>>
+    - role: MemberRole
+    - joined_at: datetime
+    __
+    + promote_to_leader(): void
+    + leave_group(): void
+}
+
+enum MemberRole {
+    LEADER
+    MEMBER
+}
+
+enum GroupStatus {
+    FORMING
+    PROJECT_SELECTED
+    WORKING
+    COMPLETED
+}
+
+' ============================================
+' MILESTONE & CHECKPOINT ENTITIES
+' ============================================
+class GroupMilestone <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - project_milestone_id: int <<FK>>
+    - title: string
+    - description: string
+    - order: int
+    - is_completed: bool
+    - completed_at: datetime?
+    __
+    + create_checkpoint(deadline): Checkpoint
+    + mark_complete(): void
+}
+
+class Checkpoint <<Entity>> {
+    - id: int <<PK>>
+    - milestone_id: int <<FK>>
+    - deadline: datetime
+    - status: CheckpointStatus
+    - created_at: datetime
+    __
+    + submit(files): CheckpointSubmission
+    + extend_deadline(new_date): void
+}
+
+class CheckpointSubmission <<Entity>> {
+    - id: int <<PK>>
+    - checkpoint_id: int <<FK>>
+    - submission_url: string
+    - submitted_at: datetime
+    - is_late: bool
+    - grade: float?
+    - feedback: string?
+    - evaluated_at: datetime?
+    __
+    + add_assignment(member, contribution): void
+    + evaluate(grade, feedback): void
+}
+
+class CheckpointAssignment <<Entity>> {
+    - id: int <<PK>>
+    - submission_id: int <<FK>>
+    - member_id: int <<FK>>
+    - contribution_description: string
+    - percentage: int
+    __
+    + update_contribution(text, pct): void
+}
+
+enum CheckpointStatus {
+    PENDING
+    SUBMITTED
+    LATE_SUBMITTED
+    EVALUATED
+    GRADED
+}
+
+' ============================================
+' TASK & KANBAN ENTITIES
+' ============================================
+class Task <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - title: string
+    - description: string?
+    - assigned_to: int? <<FK>>
+    - status: TaskStatus
+    - priority: TaskPriority
+    - due_date: datetime?
+    - created_at: datetime
+    __
+    + assign_to(member): void
+    + move_to(status): void
+    + link_card(card): void
+}
+
+class WorkspaceCard <<Entity>> {
+    - id: int <<PK>>
+    - task_id: int? <<FK>>
+    - title: string
+    - content: string
+    - x: int
+    - y: int
+    - width: int
+    - height: int
+    __
+    + update_position(x, y): void
+    + resize(w, h): void
+}
+
+enum TaskStatus {
+    TODO
+    IN_PROGRESS
+    REVIEW
+    DONE
+}
+
+enum TaskPriority {
+    LOW
+    MEDIUM
+    HIGH
+    URGENT
+}
+
+' ============================================
+' EXTERNAL REFERENCES
+' ============================================
+class User <<External>> {
+    - id: int
+    - full_name: string
+}
+
+class Class <<External>> {
+    - id: int
+    - class_code: string
+}
+
+class Project <<External>> {
+    - id: int
+    - title: string
+}
+
+class ProjectMilestone <<External>> {
+    - id: int
+    - title: string
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Group core relationships
+Group "1" --> "3..5" GroupMember : has members
+Group "*" --> "1" Class : belongs to
+Group "*" ..> "0..1" Project : selects
+Group --> GroupStatus : has status
+
+' Group member relationships
+GroupMember "*" --> "1" User : student
+GroupMember --> MemberRole : has role
+
+' Milestone relationships
+Group "1" --> "0..*" GroupMilestone : has milestones
+GroupMilestone "*" --> "1" ProjectMilestone : cloned from
+GroupMilestone "1" --> "0..*" Checkpoint : has checkpoints
+
+' Checkpoint relationships
+Checkpoint --> CheckpointStatus : has status
+Checkpoint "1" --> "0..1" CheckpointSubmission : has submission
+CheckpointSubmission "1" --> "1..*" CheckpointAssignment : has assignments
+CheckpointAssignment "*" --> "1" GroupMember : assigned to
+
+' Task relationships
+Group "1" --> "0..*" Task : has tasks
+Task "*" ..> "0..1" GroupMember : assigned to
+Task --> TaskStatus : has status
+Task --> TaskPriority : has priority
+Task "1" --> "0..1" WorkspaceCard : linked to card
+
+' ============================================
+' NOTES
+' ============================================
+note top of Group
+    <b>Group Entity</b>
+    ────────────────────
+    • 3-5 members required
+    • 1 leader, rest members
+    • Unique name per class
+    • Selects 1 project
+    
+    <b>BR-30: Group Formation</b>
+    • Min 3, Max 5 students
+    • Must have 1 leader
+    • All from same class
+end note
+
+note right of GroupMilestone
+    <b>Milestone Cloning</b>
+    ────────────────────────
+    When group selects project:
+    • ProjectMilestones cloned
+      to GroupMilestones
+    • Group tracks own progress
+    • Checkpoints created per
+      milestone deadline
+end note
+
+note bottom of CheckpointSubmission
+    <b>Checkpoint Workflow</b>
+    ──────────────────────────
+    1. Group submits file (Cloudinary)
+    2. Each member adds contribution %
+    3. Lecturer evaluates, gives grade
+    4. Late submission penalty applies
+    
+    <b>BR-40: Submission Rules</b>
+    • Max file size: 100MB
+    • Late penalty: -10% per day
+    • Must assign 100% total
+end note
+
+note right of Task
+    <b>Kanban Board</b>
+    ────────────────────
+    • Tasks in 4 columns:
+      TODO → IN_PROGRESS
+      → REVIEW → DONE
+    • Assign to members
+    • Set priority, due date
+    • Optional whiteboard card
+end note
+
+legend bottom left
+    <b>COMPLEX MODULE - 8 ENTITIES:</b>
+    • Group Formation (3-5 members)
+    • Project Selection (race condition)
+    • Milestone Cloning (from project)
+    • Checkpoint Submission (with assignments)
+    • Task Management (Kanban board)
+    • Whiteboard Integration (cards)
+end legend
+
+@enduml

@@ -1,0 +1,151 @@
+@startuml Approve Project Flow
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Approve Project Flow (UC004)
+
+actor "Head of Dept" as head #E3F2FD
+participant "Frontend\n(React)" as frontend #FFF3E0
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+participant "Notification\nService" as notif #FFF9C4
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== View Pending Projects ==
+
+head -> frontend: Navigate to\n"Pending Projects"
+activate frontend
+
+frontend -> backend: GET /api/projects?\nstatus=pending&\ndepartment_id={dept_id}
+activate backend
+
+backend -> backend: Verify Head role\nand department
+
+backend -> db: SELECT projects\nWHERE status = 'pending'\nJOIN users (lecturer info)
+activate db
+db --> backend: Projects list with\nlecturer details
+deactivate db
+
+backend --> frontend: 200 OK\n{projects: [...]}
+deactivate backend
+
+frontend --> head: Display projects table\n(title, lecturer, date)
+deactivate frontend
+
+== Review Project Details ==
+
+head -> frontend: Click on project\nto review
+activate frontend
+
+frontend -> backend: GET /api/projects/{id}
+activate backend
+
+backend -> db: SELECT project\nwith milestones
+activate db
+db --> backend: Full project details
+deactivate db
+
+backend --> frontend: 200 OK\n{project details}
+deactivate backend
+
+frontend --> head: Show project details:\n- Title, Description\n- Milestones\n- Lecturer info
+deactivate frontend
+
+== Approve Project ==
+
+head -> frontend: Click "Approve" button
+activate frontend
+
+frontend -> frontend: Show confirmation\ndialog
+
+head -> frontend: Confirm approval
+frontend -> backend: PUT /api/projects/{id}/approve
+activate backend
+
+backend -> backend: Validate:\n- User is Head\n- Project status is "pending"\n- Not already processed
+
+backend -> db: BEGIN TRANSACTION
+activate db
+
+backend -> db: UPDATE projects\nSET status = 'approved',\napproved_by = {head_id},\napproved_at = NOW()
+db --> backend: Success
+
+backend -> db: INSERT INTO notifications\n(user_id: lecturer_id,\ntype: 'project_approved',\nmessage: '...')
+db --> backend: notification_id
+
+backend -> db: COMMIT TRANSACTION
+db --> backend: Success
+deactivate db
+
+backend -> notif: Queue email notification\n(async task)
+activate notif
+note right of notif
+  Email Details:
+  To: lecturer.email
+  Subject: "Project Approved"
+  Body: "Your project '{title}' 
+  has been approved by {head_name}"
+end note
+notif --> backend: Queued
+deactivate notif
+
+backend --> frontend: 200 OK\n{project updated}
+deactivate backend
+
+frontend --> head: Show success toast:\n"Project approved successfully"
+frontend -> frontend: Remove from pending list
+deactivate frontend
+
+== Alternative: Deny Project ==
+
+alt Deny Project
+    head -> frontend: Click "Deny" button
+    activate frontend
+    
+    frontend --> head: Show denial reason form
+    head -> frontend: Enter denial reason
+    
+    frontend -> backend: PUT /api/projects/{id}/deny\n{denial_reason}
+    activate backend
+    
+    backend -> db: UPDATE projects\nSET status = 'denied',\ndenial_reason = '...',\nreviewed_by = {head_id}
+    activate db
+    db --> backend: Success
+    deactivate db
+    
+    backend -> db: INSERT INTO notifications\n(type: 'project_denied')
+    activate db
+    db --> backend: Success
+    deactivate db
+    
+    backend -> notif: Queue email with reason
+    activate notif
+    notif --> backend: Queued
+    deactivate notif
+    
+    backend --> frontend: 200 OK
+    deactivate backend
+    
+    frontend --> head: "Project denied"
+    deactivate frontend
+end
+
+note right of backend
+  Authorization:
+  - Only Head of Department can approve
+  - Must be same department as lecturer
+  
+  Business Rules:
+  - Once approved, cannot be denied
+  - Denied projects can be edited and resubmitted
+  - Notification sent via WebSocket + Email
+end note
+
+@enduml

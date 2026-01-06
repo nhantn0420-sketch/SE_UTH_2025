@@ -1,0 +1,208 @@
+@startuml Evaluate Checkpoint Flow
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Evaluate Checkpoint Submission (UC026)
+
+actor "Lecturer" as lecturer #E3F2FD
+participant "Frontend\n(React)" as frontend #FFF3E0
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+participant "Notification\nService" as notif #FFF9C4
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== View Team Checkpoints ==
+
+lecturer -> frontend: Navigate to\nTeam Milestones
+activate frontend
+
+frontend -> backend: GET /api/groups/{id}/checkpoints?\nstatus=submitted
+activate backend
+
+backend -> backend: Verify lecturer\nowns the class
+
+backend -> db: SELECT checkpoints\nJOIN checkpoint_submissions\nWHERE group_id = ?\nAND status = 'submitted'
+activate db
+db --> backend: Submitted checkpoints
+deactivate db
+
+backend --> frontend: 200 OK\n{checkpoints: [...]}
+deactivate backend
+
+frontend --> lecturer: Display checkpoints:\n- Highlight submitted ones\n- Show submission date\n- Evaluation status
+deactivate frontend
+
+== Open Checkpoint Submission ==
+
+lecturer -> frontend: Click on\nsubmitted checkpoint
+activate frontend
+
+frontend -> backend: GET /api/checkpoint-submissions/{id}
+activate backend
+
+backend -> db: SELECT checkpoint_submission\nJOIN users (submitter info)\nWHERE submission_id = ?
+activate db
+db --> backend: Full submission details
+
+backend -> db: SELECT file URLs\nFROM resource_files\nWHERE submission_id = ?
+db --> backend: File attachments
+deactivate db
+
+backend --> frontend: 200 OK\n{submission_text,\nfiles: [...],\nsubmitted_by,\nsubmitted_at,\nis_late}
+deactivate backend
+
+frontend --> lecturer: Display submission:\n- Submission text\n- File download links\n- Submitter name\n- Timestamp (with LATE badge)
+deactivate frontend
+
+== Review Submission ==
+
+lecturer -> frontend: Read submission text
+activate frontend
+
+lecturer -> frontend: Click file download links
+frontend -> frontend: Open file URLs\n(Cloudinary CDN)
+
+note right of frontend
+  Files open in new tab
+  or download directly
+  from Cloudinary CDN
+end note
+
+lecturer -> lecturer: Review work quality
+
+deactivate frontend
+
+== Enter Evaluation ==
+
+lecturer -> frontend: Enter evaluation:\n- Grade (0-10)\n- Feedback text
+activate frontend
+
+frontend -> frontend: Validate:\n- Grade in range 0-10\n- Feedback not empty
+
+frontend --> lecturer: Enable "Submit\nEvaluation" button
+deactivate frontend
+
+lecturer -> frontend: Click "Submit Evaluation"
+activate frontend
+
+frontend -> backend: POST /api/checkpoint-evaluations\n{checkpoint_submission_id,\ngrade,\nfeedback_text,\nevaluated_by: lecturer_id}
+activate backend
+
+backend -> backend: Validate:\n- Lecturer owns class\n- Submission exists\n- Grade in valid range (0-10)
+
+backend -> db: BEGIN TRANSACTION
+activate db
+
+backend -> db: SELECT * FROM\ncheckpoint_evaluations\nWHERE checkpoint_submission_id = ?
+db --> backend: Check existing evaluation
+
+alt No Previous Evaluation
+    
+    backend -> db: INSERT INTO checkpoint_evaluations\n(checkpoint_submission_id,\ngrade, feedback_text,\nevaluated_by, evaluated_at)\nRETURNING id
+    db --> backend: evaluation_id
+    
+    backend -> db: UPDATE checkpoint_submissions\nSET is_evaluated = TRUE,\nevaluated_at = NOW()
+    db --> backend: Success
+    
+    backend -> db: INSERT INTO notifications\n(user_id: submitter_id,\ntype: 'checkpoint_evaluated',\nmessage: 'Your checkpoint has\nbeen evaluated')\nRETURNING id
+    db --> backend: notification_id
+    
+    backend -> db: COMMIT TRANSACTION
+    db --> backend: Success
+    deactivate db
+    
+    backend -> notif: Queue email notification\n(async)
+    activate notif
+    
+    note right of notif
+      Email includes:
+      - Grade received
+      - Feedback excerpt
+      - Link to view full evaluation
+    end note
+    
+    notif --> backend: Queued
+    deactivate notif
+    
+    backend --> frontend: 201 Created\n{evaluation_id, grade}
+    deactivate backend
+    
+    frontend --> lecturer: Show success:\n"Evaluation submitted"
+    frontend -> frontend: Update checkpoint\nstatus to "evaluated"
+    deactivate frontend
+    
+else Already Evaluated (Re-evaluation)
+    
+    lecturer -> frontend: Confirm re-evaluation
+    activate frontend
+    
+    frontend -> backend: PUT /api/checkpoint-evaluations/{id}\n{grade, feedback_text}
+    activate backend
+    
+    backend -> db: UPDATE checkpoint_evaluations\nSET grade = ?,\nfeedback_text = ?,\nupdated_at = NOW()\nWHERE id = ?
+    activate db
+    db --> backend: Success
+    deactivate db
+    
+    backend -> db: INSERT INTO notifications\n(type: 'evaluation_updated')
+    activate db
+    db --> backend: Success
+    deactivate db
+    
+    backend --> frontend: 200 OK\n{updated evaluation}
+    deactivate backend
+    
+    frontend --> lecturer: "Evaluation updated"
+    deactivate frontend
+end
+
+== Alternative: Save as Draft ==
+
+alt Save as Draft (Optional)
+    lecturer -> frontend: Click "Save Draft"
+    activate frontend
+    
+    frontend -> backend: POST /api/checkpoint-evaluations/draft\n{checkpoint_submission_id,\ngrade, feedback_text,\nis_draft: true}
+    activate backend
+    
+    backend -> db: INSERT evaluation\nwith is_draft = true
+    activate db
+    db --> backend: Success
+    deactivate db
+    
+    backend --> frontend: 200 OK
+    deactivate backend
+    
+    frontend --> lecturer: "Draft saved.\nNot visible to student yet."
+    deactivate frontend
+    
+    note right of frontend
+      Draft mode allows lecturer
+      to save work and continue later
+      without notifying student
+    end note
+end
+
+note right of backend
+  Business Rules (BR-12, BR-13):
+  - Grade scale: 0-10 (can be configured)
+  - Feedback required (min 10 chars)
+  - Can re-evaluate with confirmation
+  - Student notified immediately
+  - Late submissions may have penalty
+  
+  Grading Factors:
+  - Quality of submission text
+  - Completeness of deliverables
+  - File attachments (code, docs)
+  - On-time vs late submission
+end note
+
+@enduml

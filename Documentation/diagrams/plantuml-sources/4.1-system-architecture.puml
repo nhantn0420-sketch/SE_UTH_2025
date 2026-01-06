@@ -1,0 +1,281 @@
+@startuml 4.1-system-architecture
+!theme plain
+skinparam linetype ortho
+
+' ============================================
+' STYLING
+' ============================================
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam shadowing false
+skinparam roundcorner 5
+skinparam padding 8
+
+' Package styling
+skinparam package {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+    BorderThickness 2
+    FontStyle bold
+    FontSize 12
+}
+
+' Node styling
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 2
+    FontStyle bold
+    FontSize 11
+}
+
+' Component styling
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #666666
+    BorderThickness 1
+    FontSize 10
+}
+
+' Database styling
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #9C27B0
+    BorderThickness 2
+    FontSize 10
+}
+
+' Cloud styling
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #666666
+    BorderThickness 1
+    FontSize 10
+}
+
+' Rectangle styling
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #666666
+    BorderThickness 1
+    FontSize 10
+}
+
+' Arrow styling
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 8
+}
+
+' Title
+title <size:16><b>CollabSphere - System Architecture</b></size>\n<size:11>3-Tier Architecture with External Services</size>
+
+' ============================================
+' CLIENT LAYER (Tier 1)
+' ============================================
+package "CLIENT LAYER" #E3F2FD {
+    [Web Browser\nChrome, Firefox, Edge] as Browser
+    [React SPA\nSingle Page App\nPort: 3000] as React
+    [Mobile App\n(Future)\nReact Native] as Mobile
+}
+
+' ============================================
+' WEB SERVER LAYER (Tier 2)
+' ============================================
+node "WEB SERVER" #E8F5E9 {
+    component [Nginx\nReverse Proxy\nPort: 443\nSSL/TLS] as Nginx
+}
+
+' ============================================
+' APPLICATION LAYER (Tier 3)
+' ============================================
+node "APPLICATION LAYER" #FFF3E0 {
+    component [FastAPI Core\nREST API\nJWT Auth\nPort: 8000] as FastAPI
+    component [Socket.IO\nReal-time Chat\nWebSocket] as SocketIO
+    component [WebRTC\nVideo Calls\nSignaling] as WebRTC
+    component [Background\nEmail Queue\nAsync Tasks] as BgTasks
+}
+
+' ============================================
+' DATA LAYER (Tier 4)
+' ============================================
+node "DATA LAYER" #F3E5F5 {
+    database [PostgreSQL 15\ncollabsphere_db\n37 Tables | 6 Modules\nConnection Pool] as PostgreSQL
+    database [Redis\nCache Store\nSession & Query Cache] as Redis
+}
+
+' ============================================
+' EXTERNAL SERVICES (Right Side)
+' ============================================
+cloud "AWS Bedrock" as AWS {
+    [AI Assistant\nMilestone Gen\nClaude 3 Sonnet] as AWSService
+}
+
+cloud "Cloudinary CDN" as Cloudinary {
+    [File Storage\nImage Upload\n100GB Quota] as CloudinaryService
+}
+
+cloud "SMTP Server" as SMTP {
+    [Email Notif\nPassword Reset\nGmail/SendGrid] as SMTPService
+}
+
+' ============================================
+' LAYOUT HINTS
+' ============================================
+Browser -[hidden]right- React
+React -[hidden]right- Mobile
+
+FastAPI -[hidden]right- SocketIO
+SocketIO -[hidden]right- WebRTC
+WebRTC -[hidden]right- BgTasks
+
+PostgreSQL -[hidden]right- Redis
+
+AWS -[hidden]down- Cloudinary
+Cloudinary -[hidden]down- SMTP
+
+' ============================================
+' CONNECTIONS - CLIENT TO SERVER
+' ============================================
+Browser -down-> Nginx : **HTTPS**\nPort 443
+React -down-> Nginx : **HTTPS**\nPort 443
+Mobile .[#gray]down.> Nginx : **HTTPS**\n(Future)
+
+' ============================================
+' CONNECTIONS - SERVER TO APPLICATION
+' ============================================
+Nginx -down-> FastAPI : **Reverse Proxy**\nHTTP/1.1
+Nginx .[#2196F3]down.> SocketIO : **WebSocket**\nUpgrade
+Nginx .[#9C27B0]down.> WebRTC : **WebRTC**\nSDP/ICE
+
+' ============================================
+' CONNECTIONS - APPLICATION TO DATA
+' ============================================
+FastAPI <-down-> PostgreSQL : **SQL Queries**\nSQLModel ORM
+SocketIO -down-> PostgreSQL : **Store Messages**
+WebRTC -down-> PostgreSQL : **Call Logs**
+BgTasks -down-> PostgreSQL : **Async Updates**
+
+FastAPI -down-> Redis : **Cache**\nSession Store
+SocketIO .[#F44336]down.> Redis : **Presence**
+
+' ============================================
+' CONNECTIONS - APPLICATION TO EXTERNAL
+' ============================================
+FastAPI -right-> AWS : **AI Requests**\nREST API
+FastAPI -right-> Cloudinary : **File Upload**\nSDK
+BgTasks -right-> SMTP : **Send Emails**\nAsync Queue
+
+' ============================================
+' BIDIRECTIONAL REAL-TIME
+' ============================================
+SocketIO .[#2196F3,thickness=2]up.> Browser : **⬌ Real-time**
+SocketIO .[#2196F3,thickness=2]up.> React : **⬌ Real-time**
+WebRTC .[#9C27B0,thickness=2]up.> Browser : **⬌ P2P Stream**
+WebRTC .[#9C27B0,thickness=2]up.> React : **⬌ P2P Stream**
+
+' ============================================
+' ANNOTATIONS
+' ============================================
+note top of Browser
+    <b>TIER 1: CLIENT</b>
+    ──────────────
+    • Browser access
+    • React UI rendering
+    • Mobile (future)
+end note
+
+note top of Nginx
+    <b>TIER 2: WEB SERVER</b>
+    ────────────────
+    • SSL/TLS encryption
+    • Static file serving
+    • Request routing
+end note
+
+note top of FastAPI
+    <b>TIER 3: APPLICATION</b>
+    ──────────────────
+    • FastAPI: 60+ endpoints
+    • Socket.IO: Real-time
+    • WebRTC: Video/audio
+    • Background: Async jobs
+end note
+
+note top of PostgreSQL
+    <b>TIER 4: DATA</b>
+    ──────────────
+    • PostgreSQL: Main DB
+    • Redis: Cache layer
+    • ACID transactions
+end note
+
+note right of AWS
+    <b>EXTERNAL SERVICES</b>
+    ────────────────
+    <b>AWS Bedrock:</b>
+    • AI assistant
+    • Milestone generation
+    
+    <b>Cloudinary:</b>
+    • File/image storage
+    • CDN distribution
+    
+    <b>SMTP:</b>
+    • Email notifications
+    • Password reset
+end note
+
+' ============================================
+' LEGEND BOX
+' ============================================
+legend top left
+    <b>TECHNOLOGY STACK</b>
+    ═══════════════════
+    
+    <b>Frontend:</b>
+    • React 18.2+ | Material-UI
+    • TailwindCSS | Axios
+    • Socket.IO Client | WebRTC
+    
+    <b>Backend:</b>
+    • Python 3.11+ | FastAPI 0.104+
+    • SQLModel | Pydantic V2
+    
+    <b>Database:</b>
+    • PostgreSQL 15 (37 tables)
+    • Redis 7+ (Cache)
+    
+    <b>DevOps:</b>
+    • Docker Compose | Nginx
+    • Git | GitHub Actions
+end legend
+
+' ============================================
+' DEPLOYMENT INFO
+' ============================================
+legend bottom right
+    <b>DEPLOYMENT</b>
+    ═══════════════
+    
+    <b>Docker Compose (3 Containers):</b>
+    • frontend: React (Port 3000)
+    • backend: FastAPI (Port 8000)
+    • database: PostgreSQL (Port 5432)
+    
+    <b>Security:</b>
+    • JWT Authentication
+    • HTTPS/SSL (Let's Encrypt)
+    • RBAC: 5 roles
+    • bcrypt hashing
+    • CORS | Rate limiting
+    
+    <b>Scalability:</b>
+    • Load balancer ready
+    • Container limits
+    • Redis caching
+end legend
+
+@enduml

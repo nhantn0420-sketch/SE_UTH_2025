@@ -1,0 +1,80 @@
+@startuml Authentication Flow
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title User Authentication Flow (Login)
+
+actor "User" as user #E3F2FD
+participant "Frontend\n(React)" as frontend #FFF3E0
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== Login Process ==
+
+user -> frontend: Enter credentials\n(email, password)
+activate frontend
+
+frontend -> frontend: Validate input\n(required fields, email format)
+
+frontend -> backend: POST /api/auth/login\n{email, password}
+activate backend
+
+backend -> backend: Validate request body
+
+backend -> db: SELECT user WHERE email = ?
+activate db
+db --> backend: User record
+deactivate db
+
+alt User Found
+    backend -> backend: Compare password\nwith bcrypt hash
+    
+    alt Password Match
+        backend -> backend: Generate JWT token\n(expires in 24h)
+        
+        backend -> db: UPDATE last_login
+        activate db
+        db --> backend: Success
+        deactivate db
+        
+        backend --> frontend: 200 OK\n{token, user_data}
+        deactivate backend
+        
+        frontend -> frontend: Store token in\nlocalStorage
+        
+        frontend -> frontend: Set auth state
+        
+        frontend --> user: Redirect to Dashboard
+        deactivate frontend
+        
+    else Password Mismatch
+        backend --> frontend: 401 Unauthorized\n{error: "Invalid credentials"}
+        deactivate backend
+        frontend --> user: Show error message
+        deactivate frontend
+    end
+    
+else User Not Found
+    backend --> frontend: 401 Unauthorized\n{error: "Invalid credentials"}
+    deactivate backend
+    frontend --> user: Show error message
+    deactivate frontend
+end
+
+note right of backend
+  Security:
+  - Password hashed with bcrypt
+  - JWT includes: user_id, email, role
+  - Token expires after 24 hours
+  - Failed login attempts logged
+end note
+
+@enduml

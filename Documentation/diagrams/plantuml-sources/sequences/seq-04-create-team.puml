@@ -1,0 +1,171 @@
+@startuml Create Team Flow
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Create Team and Add Members Flow (UC011, UC012)
+
+actor "Lecturer" as lecturer #E3F2FD
+participant "Frontend\n(React)" as frontend #FFF3E0
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== Navigate to Class ==
+
+lecturer -> frontend: Navigate to\nClass Teams Tab
+activate frontend
+
+frontend -> backend: GET /api/classes/{id}/teams
+activate backend
+
+backend -> db: SELECT groups\nWHERE class_id = ?
+activate db
+db --> backend: Existing teams list
+deactivate db
+
+backend --> frontend: 200 OK\n{teams: [...]}
+deactivate backend
+
+frontend --> lecturer: Display teams list\n+ "Create Team" button
+deactivate frontend
+
+== Create Team ==
+
+lecturer -> frontend: Click "Create Team"
+activate frontend
+
+frontend --> lecturer: Show team creation modal
+deactivate frontend
+
+lecturer -> frontend: Enter:\n- Team name\n- Description (optional)
+activate frontend
+
+frontend -> backend: POST /api/groups\n{class_id, name, description}
+activate backend
+
+backend -> backend: Validate:\n- Lecturer owns class\n- Name not empty
+
+backend -> db: SELECT COUNT(*)\nFROM groups\nWHERE class_id = ?\nAND name = ?
+activate db
+db --> backend: count
+
+alt Team Name Available
+    db --> backend: count = 0
+    deactivate db
+    
+    backend -> db: INSERT INTO groups\n(class_id, name, description,\ncreated_at)\nRETURNING id
+    activate db
+    db --> backend: group_id
+    deactivate db
+    
+    backend --> frontend: 201 Created\n{group_id, name}
+    deactivate backend
+    
+    frontend --> lecturer: Close modal,\nshow success message
+    deactivate frontend
+    
+else Duplicate Name
+    db --> backend: count > 0
+    deactivate db
+    
+    backend --> frontend: 409 Conflict\n{error: "Team name exists"}
+    deactivate backend
+    
+    frontend --> lecturer: Show error,\nsuggest alternatives
+    deactivate frontend
+end
+
+== Add Members to Team ==
+
+lecturer -> frontend: Click "Add Members"\non created team
+activate frontend
+
+frontend -> backend: GET /api/classes/{id}/\navailable-students
+activate backend
+
+backend -> db: SELECT users\nJOIN class_members\nWHERE class_id = ?\nAND user_id NOT IN\n(SELECT user_id FROM group_members\nWHERE group_id IN\n(SELECT id FROM groups\nWHERE class_id = ?))\nAND role = 'student'
+activate db
+
+note right of db
+  Query finds students who:
+  - Are enrolled in the class
+  - Are NOT already in a team
+  in the same class
+end note
+
+db --> backend: Available students
+deactivate db
+
+backend --> frontend: 200 OK\n{students: [...]}
+deactivate backend
+
+frontend --> lecturer: Show student\nselection UI:\n- Checkboxes\n- Role dropdown
+deactivate frontend
+
+lecturer -> frontend: Select 3-5 students\nAssign roles:\n- 1 Leader\n- 2-4 Members
+activate frontend
+
+frontend -> backend: POST /api/groups/{id}/members\n{members: [{user_id, role}, ...]}
+activate backend
+
+backend -> backend: Validate:\n- Team size 3-5\n- Exactly 1 leader\n- All students available
+
+backend -> db: BEGIN TRANSACTION
+activate db
+
+loop For each selected student
+    backend -> db: INSERT INTO group_members\n(group_id, user_id, role, joined_at)
+    db --> backend: Success
+end
+
+backend -> db: INSERT INTO notifications\n(user_id, type: 'added_to_team',\nmessage: '...')\nFOR EACH member
+db --> backend: Success
+
+backend -> db: COMMIT TRANSACTION
+db --> backend: Success
+deactivate db
+
+backend --> frontend: 200 OK\n{group with members}
+deactivate backend
+
+frontend --> lecturer: Show success:\n"Members added to team"
+frontend -> frontend: Refresh team list
+deactivate frontend
+
+== Error Handling ==
+
+alt Team Size Invalid
+    backend --> frontend: 400 Bad Request\n{error: "Team must have 3-5 members"}
+    frontend --> lecturer: Show error message
+end
+
+alt Student Already in Team
+    backend --> frontend: 409 Conflict\n{error: "Student {name} already in team"}
+    frontend --> lecturer: Show error, highlight student
+end
+
+alt No Leader Assigned
+    backend --> frontend: 400 Bad Request\n{error: "Team must have 1 leader"}
+    frontend --> lecturer: Show error message
+end
+
+note right of backend
+  Business Rules (BR-08, BR-09, BR-10):
+  - Team must have 3-5 members
+  - Exactly 1 leader required
+  - Student can only be in 1 team per class
+  - Team name unique within class
+  
+  Notifications:
+  - All added students notified
+  - WebSocket broadcast + Email
+end note
+
+@enduml

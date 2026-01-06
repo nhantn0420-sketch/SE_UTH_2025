@@ -1,0 +1,237 @@
+@startuml 4.3.3-class-project-module
+!theme plain
+skinparam linetype ortho
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #FF9800
+    BorderThickness 2
+    HeaderBackgroundColor #FFF3E0
+    FontStyle bold
+    FontSize 12
+    AttributeFontSize 9
+    AttributeFontName Courier New
+}
+
+skinparam enum {
+    BackgroundColor #FFFFFF
+    BorderColor #F57C00
+    BorderThickness 1
+    HeaderBackgroundColor #FFE0B2
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 8
+}
+
+title <size:16><b>Project Module - Class Diagram</b></size>\n<size:11>Projects, Milestones, Approvals & AI Generation</size>
+
+' ============================================
+' MAIN ENTITIES
+' ============================================
+class Project <<Entity>> {
+    - id: int <<PK>>
+    - title: string
+    - description: string
+    - objectives: string?
+    - scope: string?
+    - expected_outcomes: string?
+    - technologies: string?
+    - created_by: int <<FK>>
+    - status: ProjectStatus
+    - approved_by: int? <<FK>>
+    - approved_at: datetime?
+    - rejection_reason: string?
+    - created_at: datetime
+    - updated_at: datetime
+    __
+    + submit_for_approval(): void
+    + approve(head: User): void
+    + deny(head: User, reason: string): void
+    + generate_milestones_ai(): List<ProjectMilestone>
+    + add_to_class(class: Class): ClassProject
+    + is_approved(): bool
+    + can_be_selected(): bool
+}
+
+class ProjectMilestone <<Entity>> {
+    - id: int <<PK>>
+    - project_id: int <<FK>>
+    - milestone_number: int
+    - title: string
+    - description: string
+    - deliverables: string?
+    - duration_weeks: int
+    - order: int
+    - created_at: datetime
+    __
+    + add_question(text: string): MilestoneQuestion
+    + update_deadline(weeks: int): void
+    + get_questions(): List<MilestoneQuestion>
+}
+
+class MilestoneQuestion <<Entity>> {
+    - id: int <<PK>>
+    - milestone_id: int <<FK>>
+    - question_text: string
+    - order: int
+    - created_at: datetime
+    __
+    + update_text(text: string): void
+    + reorder(new_order: int): void
+}
+
+class ClassProject <<Entity>> {
+    - id: int <<PK>>
+    - class_id: int <<FK>>
+    - project_id: int <<FK>>
+    - added_at: datetime
+    - is_available: bool
+    __
+    + make_unavailable(): void
+    + is_selected(): bool
+}
+
+' ============================================
+' ENUMERATIONS
+' ============================================
+enum ProjectStatus {
+    PENDING
+    APPROVED
+    DENIED
+    ACTIVE
+    COMPLETED
+}
+
+' ============================================
+' EXTERNAL REFERENCES
+' ============================================
+class User <<External>> {
+    - id: int <<PK>>
+    - full_name: string
+    - role: UserRole
+}
+
+class Class <<External>> {
+    - id: int <<PK>>
+    - class_code: string
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Project -> ProjectMilestone (One-to-Many)
+Project "1" --> "5..10" ProjectMilestone : has milestones >
+
+' ProjectMilestone -> MilestoneQuestion (One-to-Many)
+ProjectMilestone "1" --> "0..*" MilestoneQuestion : has questions >
+
+' Project -> User (Many-to-One - Creator)
+Project "*" --> "1" User : created by\n(Lecturer)
+
+' Project -> User (Many-to-One - Approver)
+Project "*" ..> "0..1" User : approved by\n(Head)
+
+' Project -> ProjectStatus
+Project --> ProjectStatus : has status
+
+' Project -> ClassProject (One-to-Many)
+Project "1" --> "0..*" ClassProject : available in classes >
+
+' ClassProject -> Class (Many-to-One)
+ClassProject "*" --> "1" Class : belongs to >
+
+' ============================================
+' NOTES
+' ============================================
+note top of Project
+    <b>Project Entity</b>
+    ─────────────────────
+    • Created by LECTURER
+    • Must be approved by DEPARTMENT_HEAD
+    • AI generates milestones (5-10)
+    • Can be added to multiple classes
+    
+    <b>State Machine:</b>
+    PENDING → APPROVED/DENIED → ACTIVE → COMPLETED
+end note
+
+note right of ProjectMilestone
+    <b>Project Milestone</b>
+    ────────────────────────
+    • AI-generated via AWS Bedrock
+    • 5-10 milestones per project
+    • Each has deliverables, duration
+    • Can have research questions
+    • Cloned to GroupMilestone when
+      group selects project
+end note
+
+note bottom of ClassProject
+    <b>Project-Class Junction</b>
+    ─────────────────────────────
+    • Links approved projects to classes
+    • Students in class can see/pick project
+    • One project can be in multiple classes
+    • Becomes unavailable when selected by group
+    
+    <b>Business Rules:</b>
+    • BR-20: Only approved projects can be added
+    • BR-21: Max 10 projects per class
+end note
+
+note as ApprovalWorkflow
+    <b>APPROVAL WORKFLOW</b>
+    ═══════════════════════
+    
+    1. <b>Lecturer creates project</b>
+       • Status: PENDING
+       • Fill title, description, objectives
+    
+    2. <b>AI generates milestones</b>
+       • AWS Bedrock Claude 3 Sonnet
+       • 5-10 milestones auto-generated
+       • Each with deliverables, timeline
+    
+    3. <b>Lecturer submits for approval</b>
+       • Notify Department Head
+    
+    4. <b>Head reviews project</b>
+       • Approve → Status: APPROVED
+       • Deny → Status: DENIED (with reason)
+    
+    5. <b>Staff adds to classes</b>
+       • Create ClassProject records
+       • Status: ACTIVE (available for selection)
+    
+    6. <b>Group selects project</b>
+       • Milestones cloned to GroupMilestone
+       • ClassProject.is_available = false
+       • Status: ACTIVE (in use)
+    
+    7. <b>Group completes project</b>
+       • Status: COMPLETED
+end note
+
+ApprovalWorkflow .right. Project
+
+legend bottom left
+    <b>KEY FEATURES:</b>
+    • AI-powered milestone generation
+    • Two-stage approval (Lecturer → Head)
+    • Multi-class project availability
+    • Race condition handling (SELECT FOR UPDATE)
+    • Research questions per milestone
+end legend
+
+@enduml

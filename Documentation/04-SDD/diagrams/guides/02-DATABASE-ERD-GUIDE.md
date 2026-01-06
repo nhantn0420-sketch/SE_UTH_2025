@@ -1,19 +1,19 @@
-# HƯỚNG DẪN VẼ: DATABASE ERD (28 TABLES)
+# HƯỚNG DẪN VẼ: DATABASE ERD (37 TABLES)
 **File xuất**: `4.2-erd-full.png`  
-**Thời gian**: ~3-4 giờ  
-**Độ khó**: ⭐⭐⭐⭐ Khó (nhiều tables)
+**Thời gian**: ~4-5 giờ  
+**Độ khó**: ⭐⭐⭐⭐⭐ Rất khó (nhiều tables & relationships phức tạp)
 
 ---
 
 ## 🎯 MỤC TIÊU
 
-Vẽ ERD đầy đủ cho CollabSphere database gồm **28 tables** được nhóm thành **6 modules**:
-1. Users & Academic (5 tables)
-2. Projects & Groups (8 tables)
-3. Collaboration (6 tables)
-4. Evaluation (6 tables)
+Vẽ ERD đầy đủ cho CollabSphere database gồm **37 tables** được nhóm thành **6 modules**:
+1. Users & Academic (7 tables) - Thêm ClassProject junction
+2. Projects & Groups (15 tables) - Thêm WorkspaceCard, Checkpoint tables
+3. Collaboration (7 tables) - Thêm MeetingParticipant, Whiteboard, Document
+4. Evaluation (6 tables) - Thêm CheckpointEvaluation
 5. Notifications (1 table)
-6. Additional (2 tables)
+6. Additional (1 table) - Giữ activity_logs, xóa project_tags
 
 ---
 
@@ -41,27 +41,34 @@ Vẽ ERD đầy đủ cho CollabSphere database gồm **28 tables** được nh�
 
 ## 📐 LAYOUT STRATEGY
 
-Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
+Vì có 37 tables, sẽ chia thành **6 zones theo modules**:
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │  ZONE 1: Users & Academic (Top Left)                        │
-│  5 tables: users, subjects, curricula, classes, members     │
+│  7 tables: users, subjects, curricula, classes,             │
+│            class_members, class_projects                     │
 ├──────────────────────────────────────────────────────────────┤
 │  ZONE 2: Projects & Groups (Top Right)                      │
-│  8 tables: projects, milestones, groups, tasks...           │
+│  15 tables: projects, milestones, milestone_questions,      │
+│             groups, members, group_milestones, checkpoints,  │
+│             checkpoint_assignments, checkpoint_submissions,  │
+│             workspace_cards, tasks                           │
 ├──────────────────────────────────────────────────────────────┤
 │  ZONE 3: Collaboration (Middle Left)                        │
-│  6 tables: chat, meetings, resources, whiteboard...         │
+│  7 tables: chat, meetings, meeting_participants, resources, │
+│            whiteboard_sessions, document_sessions            │
 ├──────────────────────────────────────────────────────────────┤
 │  ZONE 4: Evaluation (Middle Right)                          │
-│  6 tables: peer_reviews, evaluations, checkpoints...        │
+│  6 tables: peer_reviews, group_evaluations,                 │
+│            member_evaluations, milestone_answers,            │
+│            checkpoint_evaluations                            │
 ├──────────────────────────────────────────────────────────────┤
-│  ZONE 5: Notifications (Bottom Left)                        │
+│  ZONE 5: Notifications (Bottom)                             │
 │  1 table: notifications                                      │
 ├──────────────────────────────────────────────────────────────┤
 │  ZONE 6: Additional (Bottom Right)                          │
-│  2 tables: project_tags, activity_logs                      │
+│  1 table: activity_logs                                      │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -134,6 +141,7 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 **Định dạng**:
 - Header background: **Dark Blue (#1565C0)**
 - Add indexes note: "🔍 Indexes: username, email"
+- Add note: "ENUM role: admin, staff, head, lecturer, student"
 
 ---
 
@@ -199,10 +207,10 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │    name: VARCHAR(200)       │
 │ 🔗 subject_id: INTEGER      │
 │ 🔗 lecturer_id: INTEGER     │
-│    semester: VARCHAR(20)    │
+│    semester: ENUM           │
 │    academic_year: VARCHAR   │
 │    max_students: INTEGER    │
-│    status: ENUM             │
+│    is_active: BOOLEAN       │
 │    created_at: TIMESTAMP    │
 │    updated_at: TIMESTAMP    │
 └─────────────────────────────┘
@@ -211,6 +219,8 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 **Foreign Keys**:
 - `subject_id` → `subjects.id`
 - `lecturer_id` → `users.id`
+
+**Note**: "ENUM semester: spring, summer, fall | UNIQUE: code"
 
 ---
 
@@ -225,24 +235,48 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
 │ 🔗 class_id: INTEGER        │
-│ 🔗 student_id: INTEGER      │
-│    role: VARCHAR(20)        │
+│ 🔗 user_id: INTEGER         │
 │    joined_at: TIMESTAMP     │
-│    status: VARCHAR(20)      │
 └─────────────────────────────┘
 ```
 
 **Foreign Keys**:
 - `class_id` → `classes.id`
-- `student_id` → `users.id`
+- `user_id` → `users.id` (students only)
 
-**Note**: "🔗 Junction table (M:N)"
+**Note**: "🔗 Junction table (M:N) giữa classes ↔ users"
+
+---
+
+### Table 6: class_projects
+
+**Vị trí**: X: 650, Y: 300 (bên phải class_members)
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  class_projects             │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 class_id: INTEGER        │
+│ 🔗 project_id: INTEGER      │
+│ 🔗 assigned_by: INTEGER     │
+│    assigned_at: TIMESTAMP   │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `class_id` → `classes.id`
+- `project_id` → `projects.id`
+- `assigned_by` → `users.id` (Head/Lecturer who assigned)
+
+**Note**: "🔗 Junction table (M:N) giữa classes ↔ projects"
 
 ---
 
 ## 🎨 ZONE 2: PROJECTS & GROUPS MODULE
 
-### Table 6: projects
+### Table 7: projects
 
 **Vị trí**: X: 1000, Y: 50 (top right)
 
@@ -254,26 +288,31 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │ 🔑 id: INTEGER              │
 │    title: VARCHAR(200)      │
 │    description: TEXT        │
-│    objectives: TEXT         │
-│    scope: TEXT              │
-│    expected_outcomes: TEXT  │
-│ 🔗 created_by: INTEGER      │
+│    goals: TEXT              │
+│    requirements: TEXT       │
+│ 🔗 curriculum_id: INTEGER   │
+│ 🔗 creator_id: INTEGER      │
+│    duration_weeks: INTEGER  │
+│    max_group_size: INTEGER  │
+│    min_group_size: INTEGER  │
 │    status: ENUM             │
-│    approval_status: ENUM    │
 │ 🔗 approved_by: INTEGER     │
-│    rejection_reason: TEXT   │
 │    approved_at: TIMESTAMP   │
 │    created_at: TIMESTAMP    │
+│    updated_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
 
 **Foreign Keys**:
-- `created_by` → `users.id` (Lecturer)
+- `curriculum_id` → `curricula.id`
+- `creator_id` → `users.id` (Lecturer)
 - `approved_by` → `users.id` (Head)
+
+**Note**: "ENUM status: draft, pending, approved, rejected"
 
 ---
 
-### Table 7: project_milestones
+### Table 8: project_milestones
 
 **Vị trí**: X: 1300, Y: 50
 
@@ -286,8 +325,9 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │ 🔗 project_id: INTEGER      │
 │    title: VARCHAR(200)      │
 │    description: TEXT        │
-│    order_index: INTEGER     │
-│    duration_weeks: INTEGER  │
+│    week_number: INTEGER     │
+│    deliverables: TEXT       │
+│    order: INTEGER           │
 │    created_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
@@ -297,31 +337,30 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 
 ---
 
-### Table 8: class_projects
+### Table 9: milestone_questions
 
-**Vị trí**: X: 1000, Y: 300
+**Vị trí**: X: 1600, Y: 50
 
 **Cấu trúc**:
 ```
 ┌─────────────────────────────┐
-│  class_projects             │
+│  milestone_questions        │
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
-│ 🔗 class_id: INTEGER        │
-│ 🔗 project_id: INTEGER      │
-│    assigned_at: TIMESTAMP   │
+│ 🔗 milestone_id: INTEGER    │
+│    question: TEXT           │
+│    description: TEXT        │
+│    order: INTEGER           │
+│    created_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
 
-**Foreign Keys**:
-- `class_id` → `classes.id`
-- `project_id` → `projects.id`
-
-**Note**: "🔗 Junction table"
+**Foreign Key**:
+- `milestone_id` → `project_milestones.id`
 
 ---
 
-### Table 9: groups
+### Table 10: groups
 
 **Vị trí**: X: 1300, Y: 300
 
@@ -334,9 +373,7 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │    name: VARCHAR(100)       │
 │ 🔗 class_id: INTEGER        │
 │ 🔗 project_id: INTEGER      │
-│ 🔗 leader_id: INTEGER       │
 │    description: TEXT        │
-│    status: ENUM             │
 │    created_at: TIMESTAMP    │
 │    updated_at: TIMESTAMP    │
 └─────────────────────────────┘
@@ -345,11 +382,12 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 **Foreign Keys**:
 - `class_id` → `classes.id`
 - `project_id` → `projects.id`
-- `leader_id` → `users.id`
+
+**Note**: "Leader được xác định qua group_members.role = 'leader'"
 
 ---
 
-### Table 10: group_members
+### Table 11: group_members
 
 **Vị trí**: X: 1600, Y: 300
 
@@ -360,21 +398,22 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
 │ 🔗 group_id: INTEGER        │
-│ 🔗 student_id: INTEGER      │
-│    role: VARCHAR(20)        │
+│ 🔗 user_id: INTEGER         │
+│    role: ENUM               │
 │    contribution_score: FLOAT│
 │    joined_at: TIMESTAMP     │
-│    status: VARCHAR(20)      │
 └─────────────────────────────┘
 ```
 
 **Foreign Keys**:
 - `group_id` → `groups.id`
-- `student_id` → `users.id`
+- `user_id` → `users.id`
+
+**Note**: "ENUM role: leader, member"
 
 ---
 
-### Table 11: group_milestones
+### Table 12: group_milestones
 
 **Vị trí**: X: 1000, Y: 550
 
@@ -385,19 +424,22 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
 │ 🔗 group_id: INTEGER        │
-│    title: VARCHAR(200)      │
-│    description: TEXT        │
-│    deadline: TIMESTAMP      │
-│    status: ENUM             │
+│ 🔗 milestone_id: INTEGER    │
 │    is_completed: BOOLEAN    │
 │    completed_at: TIMESTAMP  │
-│    created_at: TIMESTAMP    │
+│ 🔗 completed_by: INTEGER     │
+│    notes: TEXT              │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `milestone_id` → `project_milestones.id`
+- `completed_by` → `users.id`
+
 ---
 
-### Table 12: checkpoints
+### Table 13: checkpoints
 
 **Vị trí**: X: 1300, Y: 550
 
@@ -410,18 +452,97 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │ 🔗 group_id: INTEGER        │
 │    title: VARCHAR(200)      │
 │    description: TEXT        │
-│    deadline: TIMESTAMP      │
-│    submission_url: VARCHAR  │
-│    status: VARCHAR(20)      │
+│    due_date: TIMESTAMP      │
+│    status: ENUM             │
+│ 🔗 created_by: INTEGER      │
+│    created_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `created_by` → `users.id`
+
+**Note**: "ENUM status: not_started, in_progress, submitted, completed"
+
+---
+
+### Table 14: checkpoint_assignments
+
+**Vị trí**: X: 1000, Y: 750
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  checkpoint_assignments     │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 checkpoint_id: INTEGER   │
+│ 🔗 user_id: INTEGER         │
+│    assigned_at: TIMESTAMP   │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `checkpoint_id` → `checkpoints.id`
+- `user_id` → `users.id`
+
+---
+
+### Table 15: checkpoint_submissions
+
+**Vị trí**: X: 1300, Y: 750
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  checkpoint_submissions     │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 checkpoint_id: INTEGER   │
+│ 🔗 submitted_by: INTEGER    │
+│    content: TEXT            │
+│    file_url: VARCHAR        │
 │    submitted_at: TIMESTAMP  │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `checkpoint_id` → `checkpoints.id`
+- `submitted_by` → `users.id`
+
 ---
 
-### Table 13: tasks
+### Table 16: workspace_cards
 
-**Vị trí**: X: 1600, Y: 550
+**Vị trí**: X: 1600, Y: 750
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  workspace_cards            │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 group_id: INTEGER        │
+│    title: VARCHAR(100)      │
+│    description: TEXT        │
+│    position: INTEGER        │
+│    color: VARCHAR(20)       │
+│    created_at: TIMESTAMP    │
+│    updated_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Key**:
+- `group_id` → `groups.id`
+
+**Note**: "UC039: Kanban columns (To Do, In Progress, Done)"
+
+---
+
+### Table 17: tasks
+
+**Vị trí**: X: 1900, Y: 750
 
 **Cấu trúc**:
 ```
@@ -430,23 +551,34 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
 │ 🔗 group_id: INTEGER        │
+│ 🔗 card_id: INTEGER         │
 │    title: VARCHAR(200)      │
 │    description: TEXT        │
-│ 🔗 assigned_to: INTEGER     │
 │    status: ENUM             │
 │    priority: ENUM           │
+│ 🔗 assigned_to: INTEGER     │
 │    due_date: TIMESTAMP      │
-│    order_index: INTEGER     │
+│ 🔗 created_by: INTEGER      │
+│ 🔗 parent_task_id: INTEGER  │
 │    created_at: TIMESTAMP    │
 │    updated_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `card_id` → `workspace_cards.id`
+- `assigned_to` → `users.id`
+- `created_by` → `users.id`
+- `parent_task_id` → `tasks.id` (self-reference for subtasks)
+
+**Note**: "ENUM status: todo, in_progress, done | ENUM priority: low, medium, high"
+
 ---
 
 ## 🎨 ZONE 3: COLLABORATION MODULE
 
-### Table 14: meetings
+### Table 18: meetings
 
 **Vị trí**: X: 50, Y: 600
 
@@ -469,7 +601,7 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 
 ---
 
-### Table 15: meeting_participants
+### Table 19: meeting_participants
 
 **Vị trí**: X: 350, Y: 600
 
@@ -481,14 +613,21 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │ 🔑 id: INTEGER              │
 │ 🔗 meeting_id: INTEGER      │
 │ 🔗 user_id: INTEGER         │
-│    status: VARCHAR(20)      │
+│    is_host: BOOLEAN         │
 │    joined_at: TIMESTAMP     │
+│    left_at: TIMESTAMP       │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `meeting_id` → `meetings.id`
+- `user_id` → `users.id`
+
+**Note**: "🔗 Junction table giữa meetings ↔ users"
+
 ---
 
-### Table 16: chat_messages
+### Table 20: chat_messages
 
 **Vị trí**: X: 50, Y: 850
 
@@ -500,19 +639,24 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │ 🔑 id: INTEGER              │
 │ 🔗 group_id: INTEGER        │
 │ 🔗 sender_id: INTEGER       │
-│    message: TEXT            │
+│    content: TEXT            │
 │    message_type: VARCHAR    │
 │    file_url: VARCHAR        │
-│    is_read: BOOLEAN         │
+│    is_edited: BOOLEAN       │
 │    created_at: TIMESTAMP    │
+│    updated_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
+
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `sender_id` → `users.id`
 
 **Note**: "💬 Real-time chat"
 
 ---
 
-### Table 17: resources
+### Table 21: resources
 
 **Vị trí**: X: 350, Y: 850
 
@@ -522,21 +666,29 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │  resources                  │
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
-│    title: VARCHAR(200)      │
+│    name: VARCHAR(255)       │
 │    description: TEXT        │
 │    file_url: VARCHAR        │
-│    file_type: VARCHAR(50)   │
-│    file_size: BIGINT        │
-│ 🔗 uploaded_by: INTEGER     │
-│ 🔗 group_id: INTEGER        │
+│    file_size: INTEGER       │
+│    file_type: VARCHAR       │
+│    resource_type: ENUM      │
 │ 🔗 class_id: INTEGER        │
+│ 🔗 group_id: INTEGER        │
+│ 🔗 uploaded_by: INTEGER     │
 │    created_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `class_id` → `classes.id` (optional)
+- `group_id` → `groups.id` (optional)
+- `uploaded_by` → `users.id`
+
+**Note**: "ENUM resource_type: document, slide, image, video, audio, archive, other"
+
 ---
 
-### Table 18: whiteboard_sessions
+### Table 22: whiteboard_sessions
 
 **Vị trí**: X: 650, Y: 850
 
@@ -547,27 +699,48 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 ├─────────────────────────────┤
 │ 🔑 id: INTEGER              │
 │ 🔗 group_id: INTEGER        │
-│    session_name: VARCHAR    │
-│    session_data: JSONB      │
+│    name: VARCHAR(200)       │
+│    data: TEXT               │
 │ 🔗 created_by: INTEGER      │
 │    created_at: TIMESTAMP    │
 │    updated_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `created_by` → `users.id`
+
 ---
 
-### Table 19: document_sessions
+### Table 23: document_sessions
 
 **Vị trí**: X: 950, Y: 850
 
-**Cấu trúc**: (Tương tự whiteboard_sessions)
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  document_sessions          │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 group_id: INTEGER        │
+│    title: VARCHAR(200)      │
+│    content: TEXT            │
+│ 🔗 created_by: INTEGER      │
+│    created_at: TIMESTAMP    │
+│    updated_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `created_by` → `users.id`
 
 ---
 
 ## 🎨 ZONE 4: EVALUATION MODULE
 
-### Table 20: peer_reviews
+### Table 24: peer_reviews
 
 **Vị trí**: X: 1900, Y: 50
 
@@ -580,30 +753,131 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │ 🔗 reviewer_id: INTEGER     │
 │ 🔗 reviewee_id: INTEGER     │
 │ 🔗 group_id: INTEGER        │
-│    period: VARCHAR(20)      │
-│    rating: INTEGER          │
-│    comments: TEXT           │
+│    score: FLOAT             │
+│    cooperation_score: FLOAT │
+│    contribution_score: FLOAT│
+│    communication_score: FLOAT│
+│    feedback: TEXT           │
 │    is_anonymous: BOOLEAN    │
 │    created_at: TIMESTAMP    │
 └─────────────────────────────┘
 ```
 
+**Foreign Keys**:
+- `reviewer_id` → `users.id`
+- `reviewee_id` → `users.id`
+- `group_id` → `groups.id`
+
 **Note**: "🔒 Anonymous to students"
 
 ---
 
-### Table 21-25: (Tương tự cấu trúc)
-- group_evaluations
-- member_evaluations
-- checkpoint_evaluations
-- milestone_questions
-- milestone_answers
+### Table 25: group_evaluations
 
-**Vị trí**: Arrange vertically dưới peer_reviews
+**Vị trí**: X: 1900, Y: 300
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  group_evaluations          │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 group_id: INTEGER        │
+│ 🔗 evaluator_id: INTEGER    │
+│    score: FLOAT             │
+│    feedback: TEXT           │
+│    criteria_scores: TEXT    │
+│    created_at: TIMESTAMP    │
+│    updated_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `group_id` → `groups.id`
+- `evaluator_id` → `users.id` (Lecturer)
 
 ---
 
-## 🎨 ZONE 5 & 6: NOTIFICATIONS & ADDITIONAL
+### Table 26: member_evaluations
+
+**Vị trí**: X: 1900, Y: 500
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  member_evaluations         │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 member_id: INTEGER       │
+│ 🔗 evaluator_id: INTEGER    │
+│ 🔗 group_id: INTEGER        │
+│    score: FLOAT             │
+│    contribution_assessment: TEXT│
+│    feedback: TEXT           │
+│    created_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `member_id` → `users.id`
+- `evaluator_id` → `users.id` (Lecturer)
+- `group_id` → `groups.id`
+
+---
+
+### Table 27: milestone_answers
+
+**Vị trí**: X: 1900, Y: 700
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  milestone_answers          │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 question_id: INTEGER     │
+│ 🔗 user_id: INTEGER         │
+│ 🔗 group_id: INTEGER        │
+│    answer: TEXT             │
+│    feedback: TEXT           │
+│    score: FLOAT             │
+│    created_at: TIMESTAMP    │
+│    updated_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `question_id` → `milestone_questions.id`
+- `user_id` → `users.id`
+- `group_id` → `groups.id`
+
+---
+
+### Table 28: checkpoint_evaluations
+
+**Vị trí**: X: 1900, Y: 900
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  checkpoint_evaluations     │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 checkpoint_id: INTEGER   │
+│ 🔗 evaluator_id: INTEGER    │
+│    score: FLOAT             │
+│    feedback: TEXT           │
+│    created_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
+
+**Foreign Keys**:
+- `checkpoint_id` → `checkpoints.id`
+- `evaluator_id` → `users.id` (Lecturer)
+
+---
+
+## 🎨 ZONE 5: NOTIFICATIONS MODULE
 
 ### Table 26: notifications
 
@@ -623,20 +897,64 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 │    is_read: BOOLEAN         │
 │    read_at: TIMESTAMP       │
 │    created_at: TIMESTAMP    │
+---
+
+## 🎨 ZONE 5: NOTIFICATIONS MODULE
+
+### Table 29: notifications
+
+**Vị trí**: X: 50, Y: 1100
+
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  notifications              │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 user_id: INTEGER         │
+│    type: ENUM               │
+│    title: VARCHAR(200)      │
+│    message: TEXT            │
+│    link: VARCHAR            │
+│    is_read: BOOLEAN         │
+│    is_email_sent: BOOLEAN   │
+│    created_at: TIMESTAMP    │
+│    read_at: TIMESTAMP       │
 └─────────────────────────────┘
 ```
 
+**Foreign Key**:
+- `user_id` → `users.id`
+
+**Note**: "ENUM type: project_*, group_*, evaluation_*, resource_*, meeting_*, system_*"
+
 ---
 
-### Table 27: project_tags
+## 🎨 ZONE 6: ADDITIONAL MODULE
 
-**Vị trí**: X: 1900, Y: 1100
+### Table 30: activity_logs (OPTIONAL)
 
----
+**Vị trí**: X: 350, Y: 1100
 
-### Table 28: activity_logs
+**Cấu trúc**:
+```
+┌─────────────────────────────┐
+│  activity_logs              │
+├─────────────────────────────┤
+│ 🔑 id: INTEGER              │
+│ 🔗 user_id: INTEGER         │
+│    action: VARCHAR(100)     │
+│    entity_type: VARCHAR(50) │
+│    entity_id: INTEGER       │
+│    details: TEXT            │
+│    created_at: TIMESTAMP    │
+└─────────────────────────────┘
+```
 
-**Vị trí**: X: 2200, Y: 1100
+**Foreign Key**:
+- `user_id` → `users.id`
+
+**Note**: "Table này OPTIONAL - nếu không cần có thể bỏ"
 
 ---
 
@@ -700,17 +1018,66 @@ Vì có 28 tables, sẽ chia thành **6 zones theo modules**:
 
 ## ✅ CHECKLIST
 
-- [ ] 28 tables vẽ đầy đủ
-- [ ] Mỗi table có PK (🔑) và FK (🔗) rõ ràng
-- [ ] Data types chính xác
-- [ ] Indexes được note
-- [ ] Relationships vẽ đúng (1:N, M:N)
+### Tables (37 total)
+- [ ] **Zone 1 - Users & Academic (7 tables)**:
+  - [ ] users (12 fields)
+  - [ ] subjects
+  - [ ] curricula
+  - [ ] classes
+  - [ ] class_members
+  - [ ] class_projects (junction)
+  
+- [ ] **Zone 2 - Projects & Groups (15 tables)**:
+  - [ ] projects (15 fields with curriculum_id, goals, requirements)
+  - [ ] project_milestones (with week_number, deliverables)
+  - [ ] milestone_questions
+  - [ ] groups (NO leader_id, NO status)
+  - [ ] group_members (role ENUM: leader/member)
+  - [ ] group_milestones (milestone_id, completed_by)
+  - [ ] checkpoints (with created_by, due_date)
+  - [ ] checkpoint_assignments
+  - [ ] checkpoint_submissions
+  - [ ] workspace_cards (Kanban columns)
+  - [ ] tasks (with card_id, parent_task_id, created_by)
+  
+- [ ] **Zone 3 - Collaboration (7 tables)**:
+  - [ ] meetings (with started_at, ended_at)
+  - [ ] meeting_participants (junction)
+  - [ ] chat_messages (content, is_edited, updated_at)
+  - [ ] resources (name, resource_type ENUM)
+  - [ ] whiteboard_sessions
+  - [ ] document_sessions
+  
+- [ ] **Zone 4 - Evaluation (6 tables)**:
+  - [ ] peer_reviews (4 score fields)
+  - [ ] group_evaluations
+  - [ ] member_evaluations
+  - [ ] milestone_answers
+  - [ ] checkpoint_evaluations
+  
+- [ ] **Zone 5 - Notifications (1 table)**:
+  - [ ] notifications (with type ENUM, is_email_sent)
+  
+- [ ] **Zone 6 - Additional (1 table - OPTIONAL)**:
+  - [ ] activity_logs (OPTIONAL)
+
+### Keys & Relationships
+- [ ] Mỗi table có PK (🔑) rõ ràng
+- [ ] Mỗi FK (🔗) vẽ line đến PK tương ứng
+- [ ] Junction tables (6): class_projects, class_members, group_members, checkpoint_assignments, meeting_participants
+- [ ] Self-reference: tasks.parent_task_id → tasks.id
+- [ ] Data types chính xác (INTEGER, VARCHAR, TEXT, BOOLEAN, ENUM, FLOAT, TIMESTAMP)
+- [ ] ENUM values note rõ (role, status, resource_type, notification_type)
+
+### Visual Elements
 - [ ] 6 zones có màu nền phân biệt
-- [ ] Legend/Key giải thích icons
-- [ ] Export PNG resolution cao
+- [ ] Indexes được note (🔍)
+- [ ] Legend/Key giải thích icons (🔑, 🔗, 🔍)
+- [ ] Relationships vẽ đúng cardinality (1:N, M:N)
+- [ ] Export PNG resolution cao (150-200%)
 
 ---
 
-**THỜI GIAN**: 3-4 giờ (có thể chia làm nhiều lần)
+**THỜI GIAN**: 4-5 giờ (tăng từ 3-4h do thêm 9 tables)
 
-**TIP**: Vẽ từng zone một, save thường xuyên!
+**TIP**: Vẽ từng zone một, save thường xuyên! Kiểm tra lại code ở `/collabsphere/backend/app/models/` nếu có thắc mắc.

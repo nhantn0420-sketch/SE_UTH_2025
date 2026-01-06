@@ -1,0 +1,199 @@
+@startuml 4.3.2-class-academic-module
+!theme plain
+skinparam linetype ortho
+
+' ============================================
+' STYLING
+' ============================================
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #4CAF50
+    BorderThickness 2
+    HeaderBackgroundColor #E8F5E9
+    FontStyle bold
+    FontSize 12
+    AttributeFontSize 9
+    AttributeFontName Courier New
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 8
+}
+
+title <size:16><b>Academic Module - Class Diagram</b></size>\n<size:11>Subjects, Curricula, Classes & Enrollments</size>
+
+' ============================================
+' MAIN ENTITIES
+' ============================================
+class Subject <<Entity>> {
+    - id: int <<PK>>
+    - subject_code: string <<UNIQUE>>
+    - subject_name: string
+    - description: string?
+    - credits: int
+    - semester: int
+    - is_active: bool
+    - created_at: datetime
+    - updated_at: datetime
+    __
+    + create_curriculum(version): Curriculum
+    + deactivate(): void
+    + get_active_curricula(): List<Curriculum>
+}
+
+class Curriculum <<Entity>> {
+    - id: int <<PK>>
+    - subject_id: int <<FK>>
+    - version: string
+    - learning_outcomes: string
+    - syllabus_url: string?
+    - is_active: bool
+    - created_at: datetime
+    - activated_at: datetime?
+    __
+    + activate(): void
+    + deactivate(): void
+    + create_class(lecturer, semester): Class
+}
+
+class Class <<Entity>> {
+    - id: int <<PK>>
+    - curriculum_id: int <<FK>>
+    - class_code: string <<UNIQUE>>
+    - lecturer_id: int <<FK>>
+    - semester: string
+    - year: int
+    - max_students: int
+    - current_students: int
+    - schedule: string?
+    - room: string?
+    - is_active: bool
+    - created_at: datetime
+    __
+    + enroll(student: User): ClassMember
+    + drop(student: User): bool
+    + get_students(): List<User>
+    + get_projects(): List<Project>
+    + check_capacity(): bool
+    + is_full(): bool
+}
+
+class ClassMember <<Entity>> {
+    - id: int <<PK>>
+    - class_id: int <<FK>>
+    - student_id: int <<FK>>
+    - enrollment_date: datetime
+    - attendance_count: int
+    - grade: float?
+    - status: EnrollmentStatus
+    __
+    + check_attendance(): void
+    + update_grade(grade: float): void
+    + drop(): void
+}
+
+enum EnrollmentStatus {
+    ACTIVE
+    DROPPED
+    COMPLETED
+    FAILED
+}
+
+' ============================================
+' USER REFERENCE (External)
+' ============================================
+class User <<External>> {
+    - id: int <<PK>>
+    - username: string
+    - full_name: string
+    - role: UserRole
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Subject -> Curriculum (One-to-Many)
+Subject "1" --> "1..*" Curriculum : has curricula >
+
+' Curriculum -> Class (One-to-Many)
+Curriculum "1" --> "0..*" Class : taught in >
+
+' Class -> ClassMember (One-to-Many)
+Class "1" --> "0..*" ClassMember : has members >
+
+' ClassMember -> User (Many-to-One)
+ClassMember "*" --> "1" User : student
+
+' Class -> User (Many-to-One)
+Class "*" --> "1" User : lecturer
+
+' ClassMember -> EnrollmentStatus
+ClassMember --> EnrollmentStatus : has status
+
+' ============================================
+' NOTES
+' ============================================
+note top of Subject
+    <b>Subject Entity</b>
+    ───────────────────
+    • Core academic subject (e.g., SE101)
+    • Has multiple curriculum versions
+    • 1-4 credits, 1-8 semester
+    • Can be active/inactive
+end note
+
+note right of Curriculum
+    <b>Curriculum Version</b>
+    ──────────────────────
+    • Specific version of subject content
+    • Learning outcomes, syllabus
+    • Multiple classes can use same curriculum
+    • Only 1 active version at a time
+end note
+
+note bottom of Class
+    <b>Class Instance</b>
+    ─────────────────────
+    • Specific class in semester
+    • Max 30-60 students
+    • One lecturer per class
+    • Has schedule, room
+    
+    <b>Business Rules:</b>
+    • BR-10: Min 10, Max 60 students
+    • BR-11: One lecturer only
+    • BR-12: Must have active curriculum
+end note
+
+note right of ClassMember
+    <b>Enrollment</b>
+    ──────────────────
+    • Student enrollment in class
+    • Track attendance, grade
+    • Can be dropped
+    • Status: ACTIVE, DROPPED,
+      COMPLETED, FAILED
+end note
+
+legend bottom left
+    <b>ACADEMIC WORKFLOW:</b>
+    1. Admin creates Subject
+    2. Staff creates Curriculum (version)
+    3. Staff activates Curriculum
+    4. Staff creates Class with Lecturer
+    5. Students enroll → ClassMember
+    6. Lecturer takes attendance, grades
+    7. Student completes/drops
+end legend
+
+@enduml

@@ -6,7 +6,9 @@
 
 ### Scope & Estimation (Phạm vi và Ước tính)
 
-Dự án CollabSphere được ước tính mất **8-16 tuần (2-4 tháng)** với tổng effort khoảng **320-400 man-days** cho nhóm 4 người.
+Dự án CollabSphere được ước tính mất **8-9 tuần (2 tháng)** với tổng effort khoảng **320-350 man-days** cho nhóm 4 người.
+
+**Timeline**: 2/12/2025 - 31/1/2026 (9 tuần)
 
 ### Work Breakdown Structure Table
 
@@ -85,29 +87,9 @@ Dự án CollabSphere được ước tính mất **8-16 tuần (2-4 tháng)** v
 
 ### Timeline Gantt Chart
 
-```
-[Giai đoạn 1-2: Weeks 1-2] Requirements & Design
-├── Requirements Analysis ████░░░░░░░░░░░░
-├── Use Case & SRS        ░░████░░░░░░░░░░
-└── Database & API Design ░░░░████░░░░░░░░
+![Figure 2.1: Project Timeline - Gantt Chart](diagrams/2.1-gantt-chart.png)
 
-[Giai đoạn 3-4: Weeks 3-6] Backend Development
-├── Auth & User System    ░░░░░░████░░░░░░
-├── Core API Modules      ░░░░░░░░████████
-└── Evaluation & Resource ░░░░░░░░░░░░████
-
-[Giai đoạn 5: Weeks 7-8] AI & Real-time
-├── AI Integration        ░░░░░░░░░░░░░░██
-├── WebSocket & Chat      ░░░░░░░░░░░░░░██
-└── Video Call & Whiteboard ░░░░░░░░░░░░██
-
-[Giai đoạn 6-7: Weeks 9-12] Frontend Development
-├── Admin/Staff/Head UI   ░░░░░░░░░░░░████
-├── Lecturer/Student UI   ░░░░░░░░░░░░░░██████
-└── Collaboration Tools   ░░░░░░░░░░░░░░░░████
-
-[Giai đoạn 8-9: Weeks 13-15] Testing & Deployment
-├── Testing (Unit/Integration) ░░░░░░░░░░░░░░░░██░░
+*Figure 2.1: **Project Timeline - Gantt Chart** - Dự án kéo dài 8-9 tuần (2/12/2025 - 31/1/2026) được chia thành 4 phases chính: **Phase 1: Planning & Design** (Week 1, màu xanh nhạt) bao gồm Requirements Analysis, Use Case & SRS documentation, và Database & API Design chạy nhanh; **Phase 2: Development** (Week 2-6, màu xanh lá) với các modules chạy tuần tự: Auth & User System (2 weeks), Backend Core APIs (2 weeks), AI & Real-time (2 weeks), Frontend Core (2 weeks), Frontend Features (2 weeks), Collaboration Tools (2 weeks) được compress và optimize; **Phase 3: Integration & Testing** (Week 7-8, màu vàng) gồm Integration Testing, Bug Fixing, và UAT Testing; **Phase 4: Deployment** (Week 9, màu tím) bao gồm Documentation, Cloud Deployment (parallel), và User Training. Có 4 major milestones (màu đỏ) đánh dấu completion của mỗi phase.*
 ├── Deployment & Optimization  ░░░░░░░░░░░░░░░░░░██
 └── Documentation              ░░░░░░░░░░░░░░██████
 ```
@@ -126,24 +108,21 @@ Dự án áp dụng phương pháp Agile với các đặc điểm:
 
 #### Sprint Structure
 - **Sprint Duration**: 2 tuần/sprint
-- **Total Sprints**: 7-8 sprints
-- **Sprint Planning**: Đầu mỗi sprint (2 giờ)
+- **Total Sprints**: 4-5 sprints (compressed timeline)
+- **Sprint Planning**: Đầu mỗi sprint (1 giờ)
 - **Daily Standup**: Mỗi ngày (15 phút, online qua Discord)
-- **Sprint Review**: Cuối sprint (1 giờ, demo với supervisor)
-- **Sprint Retrospective**: Sau review (30 phút)
+- **Sprint Review**: Cuối sprint (30 phút, demo với supervisor)
+- **Sprint Retrospective**: Sau review (15 phút)
 
 #### Sprint Breakdown
 
 | Sprint # | Duration | Focus Area | Key Deliverables |
 |----------|----------|------------|------------------|
-| **Sprint 0** | Week 1-2 | Planning & Design | SRS, ERD, Use Cases, API Design |
-| **Sprint 1** | Week 3-4 | Backend Core | Auth system, User API, Database setup |
-| **Sprint 2** | Week 5-6 | Backend Modules | Subject/Class/Project APIs |
-| **Sprint 3** | Week 7-8 | AI & Real-time | AI integration, WebSocket, Chat |
-| **Sprint 4** | Week 9-10 | Frontend Core | Auth pages, Admin/Staff dashboards |
-| **Sprint 5** | Week 11-12 | Frontend Features | Lecturer/Student dashboards, Groups |
-| **Sprint 6** | Week 13-14 | Collaboration Tools | Video call, Whiteboard, Editor |
-| **Sprint 7** | Week 15-16 | Testing & Deploy | Testing, bug fixes, deployment |
+| **Sprint 0** | Week 1 | Planning & Design | SRS, ERD, Use Cases, API Design (compressed) |
+| **Sprint 1** | Week 2-3 | Backend Core + APIs | Auth system, User/Subject/Class/Project APIs |
+| **Sprint 2** | Week 4-5 | AI & Frontend Core | AI integration, WebSocket, Auth pages, Dashboards |
+| **Sprint 3** | Week 6-7 | Frontend Features | Lecturer/Student dashboards, Groups, Collaboration Tools |
+| **Sprint 4** | Week 8-9 | Testing & Deploy | Integration testing, bug fixes, deployment |
 
 #### Why Agile?
 - ✅ **Flexibility**: Dễ dàng điều chỉnh khi yêu cầu thay đổi

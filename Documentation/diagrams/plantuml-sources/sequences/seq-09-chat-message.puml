@@ -1,0 +1,281 @@
+@startuml Real-time Chat Flow
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Real-time Chat with WebSocket (UC020)
+
+actor "User A" as userA #E3F2FD
+actor "User B" as userB #E3F2FD
+participant "Frontend A\n(React)" as frontendA #FFF3E0
+participant "Frontend B\n(React)" as frontendB #FFF3E0
+participant "WebSocket\n(Socket.IO)" as ws #FFF9C4
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== Connect to WebSocket ==
+
+userA -> frontendA: Open team workspace
+activate frontendA
+
+frontendA -> ws: Connect WebSocket\nwith JWT token
+activate ws
+
+ws -> ws: Validate JWT token\n(extract user_id, role)
+
+alt Token Valid
+    ws --> frontendA: Connection established\n(socket_id assigned)
+    
+    frontendA -> ws: emit("join_room",\n{team_id, user_id})
+    
+    ws -> ws: Add user to\nteam room
+    
+    ws --> frontendA: emit("room_joined",\n{room: team_id})
+    
+    note right of ws
+      Socket.IO rooms allow
+      broadcasting to specific
+      groups (teams/classes)
+    end note
+    
+else Token Invalid
+    ws --> frontendA: emit("auth_error")
+    frontendA --> userA: "Authentication failed.\nPlease login again."
+end
+
+deactivate ws
+
+== Load Chat History ==
+
+frontendA -> backend: GET /api/chat-messages?\nteam_id={team_id}&\nlimit=50&offset=0
+activate backend
+
+backend -> backend: Verify user\nin team
+
+backend -> db: SELECT chat_messages\nJOIN users (sender info)\nWHERE team_id = ?\nORDER BY created_at DESC\nLIMIT 50
+activate db
+db --> backend: Recent messages
+deactivate db
+
+backend --> frontendA: 200 OK\n{messages: [...]}
+deactivate backend
+
+frontendA --> userA: Display chat history\n(scrollable, oldest first)
+deactivate frontendA
+
+== User B Joins (Parallel) ==
+
+userB -> frontendB: Open team workspace
+activate frontendB
+
+frontendB -> ws: Connect + join_room
+activate ws
+ws --> frontendB: room_joined
+deactivate ws
+
+frontendB -> backend: GET /api/chat-messages
+activate backend
+backend -> db: SELECT messages
+activate db
+db --> backend: Messages
+deactivate db
+backend --> frontendB: 200 OK
+deactivate backend
+
+frontendB --> userB: Display chat
+deactivate frontendB
+
+== User A Sends Message ==
+
+userA -> frontendA: Type message:\n"Hi team, ready to start?"
+activate frontendA
+
+userA -> frontendA: Press Enter or\nclick Send button
+
+frontendA -> ws: emit("send_message",\n{team_id,\nmessage: "Hi team...",\nsender_id: userA_id,\nattachment: null})
+activate ws
+
+ws -> ws: Validate:\n- User in team\n- Message not empty\n- Message < 2000 chars
+
+ws -> backend: Save message\n(async via internal API)
+activate backend
+
+backend -> db: INSERT INTO chat_messages\n(team_id, sender_id,\ncontent, created_at)\nRETURNING id, created_at
+activate db
+db --> backend: message_id, timestamp
+deactivate db
+
+backend --> ws: {message_id, timestamp}
+deactivate backend
+
+ws -> ws: Broadcast to all\nroom members\n(including sender)
+
+ws ->> frontendA: emit("new_message",\n{id, team_id, sender,\nmessage, timestamp})
+ws ->> frontendB: emit("new_message",\n{id, team_id, sender,\nmessage, timestamp})
+
+deactivate ws
+
+frontendA -> frontendA: Append message\nto chat UI
+frontendA --> userA: Message appears\ninstantly
+
+activate frontendB
+frontendB -> frontendB: Append message\nto chat UI
+frontendB --> userB: New message appears\nwith notification sound
+deactivate frontendB
+
+deactivate frontendA
+
+== User B Replies ==
+
+userB -> frontendB: Type reply:\n"Yes, let's do it!"
+activate frontendB
+
+userB -> frontendB: Send
+
+frontendB -> ws: emit("send_message",\n{team_id, message: "Yes...",\nsender_id: userB_id})
+activate ws
+
+ws -> backend: Save message
+activate backend
+backend -> db: INSERT message
+activate db
+db --> backend: Success
+deactivate db
+backend --> ws: Success
+deactivate backend
+
+ws ->> frontendA: emit("new_message")
+ws ->> frontendB: emit("new_message")
+
+deactivate ws
+
+activate frontendA
+frontendA -> frontendA: Update chat UI
+frontendA --> userA: See User B's reply
+deactivate frontendA
+
+frontendB --> userB: Message sent
+deactivate frontendB
+
+== Optional: @Mention User ==
+
+userA -> frontendA: Type: "@UserC can you\nhelp with this?"
+activate frontendA
+
+frontendA -> frontendA: Detect @mention\n(regex pattern)
+
+frontendA -> ws: emit("send_message",\n{..., mentions: [userC_id]})
+activate ws
+
+ws -> backend: Save message +\ncheck mentions
+activate backend
+
+backend -> db: INSERT message
+activate db
+db --> backend: message_id
+deactivate db
+
+backend -> db: INSERT INTO notifications\n(user_id: userC_id,\ntype: 'mention',\nmessage: '@You in team chat')
+activate db
+db --> backend: Success
+deactivate db
+
+backend --> ws: Success
+deactivate backend
+
+ws ->> frontendA: emit("new_message")
+ws ->> frontendB: emit("new_message")
+
+note right of ws
+  User C receives:
+  1. Real-time WebSocket event
+  2. Browser notification
+  3. Email (if offline)
+end note
+
+ws --> frontendA: emit("message_sent")
+deactivate ws
+
+frontendA --> userA: Message with\n@mention displayed
+deactivate frontendA
+
+== Edit Message (within 5 min) ==
+
+alt Edit Message
+    userA -> frontendA: Click edit icon\non own message
+    activate frontendA
+    
+    frontendA --> userA: Show edit input
+    userA -> frontendA: Modify text
+    userA -> frontendA: Save
+    
+    frontendA -> ws: emit("edit_message",\n{message_id, new_text})
+    activate ws
+    
+    ws -> backend: Update message
+    activate backend
+    
+    backend -> db: UPDATE chat_messages\nSET content = ?,\nis_edited = true,\nedited_at = NOW()\nWHERE id = ?\nAND sender_id = ?\nAND created_at > NOW() - INTERVAL '5 minutes'
+    activate db
+    db --> backend: Success
+    deactivate db
+    
+    backend --> ws: Updated
+    deactivate backend
+    
+    ws ->> frontendA: emit("message_edited")
+    ws ->> frontendB: emit("message_edited")
+    deactivate ws
+    
+    frontendA --> userA: Message updated\n(shows "edited" badge)
+    deactivate frontendA
+    
+    activate frontendB
+    frontendB --> userB: See updated message
+    deactivate frontendB
+end
+
+== Disconnect ==
+
+userA -> frontendA: Close workspace\nor logout
+activate frontendA
+
+frontendA -> ws: emit("disconnect")
+activate ws
+
+ws -> ws: Remove user from room
+
+ws --> frontendA: Connection closed
+deactivate ws
+
+frontendA -> frontendA: Clear WebSocket\nlisteners
+deactivate frontendA
+
+note right of backend
+  Features:
+  - Real-time messaging (< 500ms latency)
+  - Persistent chat history
+  - @Mention notifications
+  - Edit message (5 min window)
+  - Delete message (own only)
+  - File attachments via URL
+  - Typing indicators (optional)
+  - Read receipts (optional)
+  
+  Technical:
+  - WebSocket via Socket.IO
+  - Room-based broadcasting
+  - JWT authentication
+  - Automatic reconnection
+  - Offline message queueing
+  - Message pagination (50/page)
+end note
+
+@enduml

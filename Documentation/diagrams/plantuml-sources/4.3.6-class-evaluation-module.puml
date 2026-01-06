@@ -1,0 +1,292 @@
+@startuml 4.3.6-class-evaluation-module
+!theme plain
+skinparam linetype ortho
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #F44336
+    BorderThickness 2
+    HeaderBackgroundColor #FFEBEE
+    FontStyle bold
+    FontSize 12
+    AttributeFontSize 9
+    AttributeFontName Courier New
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 8
+}
+
+title <size:16><b>Evaluation Module - Class Diagram</b></size>\n<size:11>Peer Reviews, Checkpoint Grading & Performance Assessment</size>
+
+' ============================================
+' PEER REVIEW ENTITIES
+' ============================================
+class PeerReview <<Entity>> {
+    - id: int <<PK>>
+    - reviewer_id: int <<FK>>
+    - reviewee_id: int <<FK>>
+    - group_id: int <<FK>>
+    - milestone_id: int <<FK>>
+    
+    ' 4-dimension scoring (0-10 each)
+    - cooperation_score: int
+    - contribution_score: int
+    - communication_score: int
+    - technical_score: int
+    
+    - comments: string?
+    - is_anonymous: bool
+    - submitted_at: datetime
+    __
+    + submit(scores, comments): void
+    + calculate_average(): float
+    + get_total_score(): int
+}
+
+' ============================================
+' GROUP EVALUATION ENTITIES
+' ============================================
+class GroupEvaluation <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - evaluator_id: int <<FK>>
+    - milestone_id: int? <<FK>>
+    
+    - overall_score: float
+    - presentation_score: float?
+    - report_score: float?
+    - teamwork_score: float?
+    
+    - strengths: string?
+    - weaknesses: string?
+    - suggestions: string?
+    - evaluated_at: datetime
+    __
+    + calculate_final_grade(): float
+    + add_bonus(points): void
+}
+
+class MemberEvaluation <<Entity>> {
+    - id: int <<PK>>
+    - group_evaluation_id: int <<FK>>
+    - member_id: int <<FK>>
+    
+    - individual_score: float
+    - peer_review_average: float
+    - checkpoint_contribution: float
+    - attendance_percentage: float
+    
+    - final_grade: float
+    - comments: string?
+    __
+    + calculate_individual_grade(): float
+    + apply_penalty(reason, pct): void
+}
+
+' ============================================
+' CHECKPOINT EVALUATION
+' ============================================
+class CheckpointEvaluation <<Entity>> {
+    - id: int <<PK>>
+    - submission_id: int <<FK>>
+    - evaluator_id: int <<FK>>
+    
+    - grade: float
+    - feedback_text: string?
+    - feedback_file_url: string?
+    
+    - evaluation_criteria: json?
+    - is_draft: bool
+    - evaluated_at: datetime
+    - published_at: datetime?
+    __
+    + grade(score, feedback): void
+    + publish(): void
+    + update_grade(new_score): void
+}
+
+' ============================================
+' MILESTONE ANSWER
+' ============================================
+class MilestoneAnswer <<Entity>> {
+    - id: int <<PK>>
+    - group_milestone_id: int <<FK>>
+    - question_id: int <<FK>>
+    
+    - answer_text: string
+    - answered_by: int <<FK>>
+    - answered_at: datetime
+    __
+    + update_answer(text): void
+}
+
+' ============================================
+' EXTERNAL REFERENCES
+' ============================================
+class User <<External>> {
+    - id: int <<PK>>
+    - full_name: string
+    - role: UserRole
+}
+
+class Group <<External>> {
+    - id: int <<PK>>
+    - name: string
+}
+
+class GroupMember <<External>> {
+    - id: int <<PK>>
+    - student_id: int
+}
+
+class GroupMilestone <<External>> {
+    - id: int <<PK>>
+    - title: string
+}
+
+class CheckpointSubmission <<External>> {
+    - id: int <<PK>>
+    - submission_url: string
+}
+
+class MilestoneQuestion <<External>> {
+    - id: int <<PK>>
+    - question_text: string
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Peer Review relationships
+PeerReview "*" --> "1" User : reviewer\n(anonymous)
+PeerReview "*" --> "1" User : reviewee
+PeerReview "*" --> "1" Group : for group
+PeerReview "*" --> "1" GroupMilestone : for milestone
+
+' Group Evaluation relationships
+GroupEvaluation "1" --> "1" Group : evaluates
+GroupEvaluation "*" --> "1" User : evaluated by\n(Lecturer)
+GroupEvaluation "*" ..> "0..1" GroupMilestone : for milestone
+GroupEvaluation "1" --> "1..*" MemberEvaluation : member grades
+
+' Member Evaluation relationships
+MemberEvaluation "*" --> "1" GroupMember : evaluates member
+
+' Checkpoint Evaluation relationships
+CheckpointEvaluation "1" --> "1" CheckpointSubmission : evaluates
+CheckpointEvaluation "*" --> "1" User : evaluated by\n(Lecturer)
+
+' Milestone Answer relationships
+MilestoneAnswer "*" --> "1" GroupMilestone : answers milestone
+MilestoneAnswer "*" --> "1" MilestoneQuestion : answers question
+MilestoneAnswer "*" --> "1" User : answered by
+
+' ============================================
+' NOTES
+' ============================================
+note top of PeerReview
+    <b>Anonymous Peer Review</b>
+    ──────────────────────────
+    • 4 dimensions (0-10 each):
+      1. Cooperation (teamwork)
+      2. Contribution (work done)
+      3. Communication (updates)
+      4. Technical (skill level)
+    
+    • Total: 0-40 points
+    • Anonymous to reviewee
+    • Required per milestone
+    • Average across all reviewers
+    
+    <b>Business Rules:</b>
+    • BR-50: Each member reviews
+      all other members
+    • BR-51: Cannot review self
+    • BR-52: Must submit by deadline
+end note
+
+note right of GroupEvaluation
+    <b>Group Assessment</b>
+    ────────────────────────
+    • Overall group performance
+    • Presentation (if any)
+    • Report quality
+    • Teamwork dynamics
+    
+    • Lecturer provides:
+      - Scores (0-10)
+      - Strengths/weaknesses
+      - Improvement suggestions
+    
+    • Final grade = weighted avg:
+      - Checkpoints: 40%
+      - Presentation: 30%
+      - Report: 20%
+      - Teamwork: 10%
+end note
+
+note bottom of MemberEvaluation
+    <b>Individual Grade Calculation</b>
+    ─────────────────────────────────
+    Components:
+    1. <b>Group grade</b> (base): 50%
+    2. <b>Peer review avg</b>: 25%
+    3. <b>Checkpoint contribution</b>: 15%
+    4. <b>Attendance</b>: 10%
+    
+    Penalties:
+    • Late submission: -5% per day
+    • Low attendance (<80%): -10%
+    • Poor peer review (<20/40): -15%
+    
+    Final grade range: 0-10
+end note
+
+note right of CheckpointEvaluation
+    <b>Checkpoint Grading</b>
+    ───────────────────────
+    • Lecturer grades submission
+    • Score: 0-10
+    • Text feedback + optional file
+    • Can be draft (not visible)
+    • Publish to make visible
+    • Re-evaluation allowed
+    
+    <b>Evaluation Criteria (JSON):</b>
+    • Completeness
+    • Quality
+    • On-time
+    • Documentation
+end note
+
+legend bottom left
+    <b>EVALUATION WORKFLOW:</b>
+    1. Group submits checkpoint
+    2. Lecturer grades checkpoint (0-10)
+    3. Members submit peer reviews (4-dimension)
+    4. Lecturer evaluates group (overall + members)
+    5. System calculates individual grades:
+       • Base: Group grade
+       • Adjust: Peer review, contribution, attendance
+    6. Publish grades to students
+    
+    <b>GRADING COMPONENTS:</b>
+    • Checkpoint grades (0-10 per checkpoint)
+    • Peer reviews (0-40 total, 4 dimensions)
+    • Group evaluation (strengths/weaknesses)
+    • Individual adjustments (contribution, attendance)
+    • Final grade (0-10, weighted average)
+end legend
+
+@enduml
