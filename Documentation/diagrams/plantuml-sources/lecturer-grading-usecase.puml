@@ -1,0 +1,168 @@
+@startuml Lecturer Grading System - Use Case Diagram
+!theme plain
+skinparam packageStyle rectangle
+
+title Use Case Diagram - Hệ thống Nhập Điểm của Giảng Viên
+
+left to right direction
+
+' Actors
+actor "Giảng viên\n(Lecturer)" as Lecturer
+actor "Hệ thống E-Learning" as ELearning
+actor "Hệ thống Email" as EmailSystem
+
+' System boundary
+rectangle "CollabSphere - Grading Module" {
+    
+    ' Main use case
+    usecase "Nhập và Quản lý Điểm" as UC_MainGrading
+    
+    ' Authentication
+    usecase "Đăng nhập hệ thống" as UC_Login
+    
+    ' Selection/Filter use cases
+    usecase "Chọn học kỳ" as UC_SelectSemester
+    usecase "Chọn lớp học" as UC_SelectClass
+    usecase "Chọn môn học" as UC_SelectSubject
+    usecase "Lọc theo nhóm" as UC_FilterGroup
+    
+    ' Grading input use cases
+    usecase "Xem danh sách sinh viên" as UC_ViewStudents
+    usecase "Nhập điểm checkpoint" as UC_EnterCheckpointGrade
+    usecase "Nhập điểm giữa kỳ" as UC_EnterMidtermGrade
+    usecase "Nhập điểm cuối kỳ" as UC_EnterFinalGrade
+    usecase "Nhập điểm dự án" as UC_EnterProjectGrade
+    usecase "Nhập điểm peer review" as UC_EnterPeerReviewGrade
+    
+    ' Calculation use cases
+    usecase "Tính điểm tổng kết" as UC_CalculateFinalGrade
+    usecase "Áp dụng công thức điểm" as UC_ApplyGradeFormula
+    usecase "Kiểm tra quy định điểm" as UC_ValidateGrade
+    
+    ' Data management use cases
+    usecase "Lưu điểm" as UC_SaveGrade
+    usecase "Xuất điểm ra Excel" as UC_ExportToExcel
+    usecase "Nhập điểm từ Excel" as UC_ImportFromExcel
+    usecase "Đồng bộ với E-Learning" as UC_SyncELearning
+    usecase "Kéo điểm từ E-Learning" as UC_PullFromELearning
+    usecase "Đẩy điểm lên E-Learning" as UC_PushToELearning
+    
+    ' Review and history use cases
+    usecase "Xem lịch sử thay đổi" as UC_ViewHistory
+    usecase "Xem thống kê điểm" as UC_ViewStatistics
+    usecase "So sánh điểm với lớp khác" as UC_CompareCourses
+    
+    ' Notification use cases
+    usecase "Gửi thông báo điểm" as UC_SendNotification
+    usecase "Gửi email thông báo" as UC_SendEmailNotification
+    usecase "Thông báo qua hệ thống" as UC_SendSystemNotification
+    
+    ' Approval use cases
+    usecase "Khóa điểm" as UC_LockGrade
+    usecase "Mở khóa điểm" as UC_UnlockGrade
+    usecase "Yêu cầu phê duyệt" as UC_RequestApproval
+}
+
+' Lecturer relationships
+Lecturer --> UC_Login
+Lecturer --> UC_MainGrading
+
+' Include relationships - Authentication
+UC_MainGrading ..> UC_Login : <<include>>
+
+' Include relationships - Selection (must select before grading)
+UC_MainGrading ..> UC_SelectSemester : <<include>>
+UC_MainGrading ..> UC_SelectClass : <<include>>
+UC_SelectClass ..> UC_SelectSubject : <<include>>
+
+' Extend relationships - Optional filters
+UC_SelectClass <.. UC_FilterGroup : <<extend>>
+
+' Include relationship - View students after selection
+UC_MainGrading ..> UC_ViewStudents : <<include>>
+
+' Extend relationships - Different types of grading
+UC_MainGrading <.. UC_EnterCheckpointGrade : <<extend>>
+UC_MainGrading <.. UC_EnterMidtermGrade : <<extend>>
+UC_MainGrading <.. UC_EnterFinalGrade : <<extend>>
+UC_MainGrading <.. UC_EnterProjectGrade : <<extend>>
+UC_MainGrading <.. UC_EnterPeerReviewGrade : <<extend>>
+
+' Include relationships - Grade calculation
+UC_EnterCheckpointGrade ..> UC_ValidateGrade : <<include>>
+UC_EnterMidtermGrade ..> UC_ValidateGrade : <<include>>
+UC_EnterFinalGrade ..> UC_ValidateGrade : <<include>>
+UC_EnterProjectGrade ..> UC_ValidateGrade : <<include>>
+
+UC_MainGrading ..> UC_CalculateFinalGrade : <<include>>
+UC_CalculateFinalGrade ..> UC_ApplyGradeFormula : <<include>>
+
+' Include relationship - Must save
+UC_MainGrading ..> UC_SaveGrade : <<include>>
+
+' Extend relationships - Optional data operations
+UC_MainGrading <.. UC_ExportToExcel : <<extend>>
+UC_MainGrading <.. UC_ImportFromExcel : <<extend>>
+UC_MainGrading <.. UC_SyncELearning : <<extend>>
+
+' Include relationships - E-Learning sync details
+UC_SyncELearning ..> UC_PullFromELearning : <<include>>
+UC_SyncELearning ..> UC_PushToELearning : <<include>>
+
+' Extend relationships - Optional review features
+UC_MainGrading <.. UC_ViewHistory : <<extend>>
+UC_MainGrading <.. UC_ViewStatistics : <<extend>>
+UC_MainGrading <.. UC_CompareCourses : <<extend>>
+
+' Extend relationships - Optional notification
+UC_SaveGrade <.. UC_SendNotification : <<extend>>
+UC_SendNotification ..> UC_SendEmailNotification : <<include>>
+UC_SendNotification ..> UC_SendSystemNotification : <<include>>
+
+' Extend relationships - Grade locking
+UC_MainGrading <.. UC_LockGrade : <<extend>>
+UC_MainGrading <.. UC_UnlockGrade : <<extend>>
+UC_LockGrade ..> UC_RequestApproval : <<include>>
+
+' External system relationships
+UC_PullFromELearning --> ELearning
+UC_PushToELearning --> ELearning
+UC_SendEmailNotification --> EmailSystem
+
+' Notes
+note right of UC_MainGrading
+  **Main Flow:**
+  1. Login to system
+  2. Select semester
+  3. Select class/subject
+  4. View student list
+  5. Enter grades
+  6. Validate grades
+  7. Calculate final grade
+  8. Save grades
+  9. (Optional) Send notification
+end note
+
+note bottom of UC_SyncELearning
+  **E-Learning Integration:**
+  - Pull: Import grades from LMS
+  - Push: Export grades to LMS
+  - Two-way synchronization
+end note
+
+note bottom of UC_CalculateFinalGrade
+  **Grade Formula:**
+  Final = (Checkpoint × 20%) + 
+          (Midterm × 20%) + 
+          (Project × 40%) + 
+          (Final × 20%)
+end note
+
+note right of UC_LockGrade
+  **Grade Lock Policy:**
+  - Locked grades cannot be edited
+  - Requires Head approval to unlock
+  - Automatic lock after 7 days
+end note
+
+@enduml

@@ -14,7 +14,7 @@
 | **Mã dự án** | SP25SE107 |
 | **Loại phần mềm** | Web Application (Single Page Application) |
 | **Học kỳ** | Spring 2025 |
-| **Thời gian thực hiện** | [MM/YYYY] - [MM/YYYY] (4 tháng) |
+| **Thời gian thực hiện** | 2/12/2025 - 31/1/2026 (8-9 tuần / 2 tháng) |
 | **Nhà trường** | FPT University |
 | **Khoa** | Software Engineering |
 

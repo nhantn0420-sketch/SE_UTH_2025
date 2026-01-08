@@ -1,0 +1,280 @@
+@startuml Group Formation Workflow - Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+skinparam activityFontName Arial
+
+title Group Formation Workflow - Activity Diagram
+
+|Student (Future Leader)|
+start
+:Navigate to Groups page;
+:Click "Create New Group";
+
+|System|
+:Check if student already in group;
+
+if (Already in a group?) then (yes)
+  :Show error message;
+  note right
+    "You are already a member of group X.
+    Leave that group first to create a new one."
+  end note
+  stop
+else (no)
+  :Show group creation form;
+endif
+
+|Student|
+:Enter group name;
+:Enter group description (optional);
+:Review group rules;
+
+|System|
+:Validate group name;
+
+if (Name already taken?) then (yes)
+  :Show error: "Name already exists";
+  stop
+else (no)
+  :Create group with status = FORMING;
+  :Set student as group leader;
+  :Generate unique group ID;
+endif
+
+|Student (Group Leader)|
+:View member invitation page;
+
+partition "Member Invitation Loop" {
+  repeat
+    :Search for student;
+    note right
+      Search by:
+      - Student ID
+      - Name
+      - Email
+    end note
+    
+    |System|
+    :Show search results;
+    
+    |Student (Group Leader)|
+    :Select student to invite;
+    
+    |System|
+    :Validate student eligibility;
+    
+    if (Student eligible?) then (no)
+      :Show ineligibility reason;
+      note right
+        Reasons:
+        - Already in another group
+        - Not in the same class
+        - Not enrolled
+        - Inactive account
+      end note
+    else (yes)
+      :Send invitation;
+      
+      fork
+        :Email notification;
+      fork again
+        :In-app notification;
+      fork again
+        :SMS notification (optional);
+      end fork
+      
+      :Add to pending invitations list;
+    endif
+    
+  repeat while (Need more members? AND < 5 members) is (yes)
+  ->no;
+}
+
+|System|
+:Wait for responses;
+note right
+  Invitation timeout: 7 days
+  Auto-remind: 3 days, 6 days
+end note
+
+|Student (Invitee)|
+:Receive invitation;
+:View group details;
+:View current members;
+:View group leader;
+
+if (Want to join?) then (yes)
+  :Accept invitation;
+  
+  |System|
+  :Add student to group;
+  :Remove from other pending invitations;
+  :Notify group leader;
+  
+  |Student (Group Leader)|
+  :See updated member list;
+  
+  |System|
+  if (Group has 3-5 members?) then (yes)
+    :Enable "Submit for Approval" button;
+  else (no)
+    :Keep in FORMING state;
+  endif
+  
+else (no)
+  |Student (Invitee)|
+  :Decline invitation;
+  :Provide reason (optional);
+  
+  |System|
+  :Notify group leader;
+  
+  |Student (Group Leader)|
+  :See rejection;
+  :Invite another student;
+endif
+
+|System|
+if (All invitations responded?) then (yes)
+  if (3-5 members confirmed?) then (yes)
+    :Proceed to approval;
+  else (no)
+    :Keep in FORMING state;
+    :Leader can invite more;
+  endif
+else (no)
+  if (Invitation timeout reached?) then (yes)
+    :Auto-reject expired invitations;
+  else (no)
+    :Continue waiting;
+  endif
+endif
+
+|Student (Group Leader)|
+if (Ready to submit for approval?) then (yes)
+  :Click "Submit for Approval";
+  
+  |System|
+  :Validate group composition;
+  
+  if (Valid? (3-5 members)) then (no)
+    :Show error;
+    stop
+  else (yes)
+    :Set status = PENDING_APPROVAL;
+    :Send notification to lecturer;
+  endif
+else (no)
+  stop
+endif
+
+|Lecturer|
+:Receive approval request;
+:Review group composition;
+
+fork
+  :Check member distribution;
+  note right
+    Ensure:
+    - No overloaded students
+    - Balanced skill levels
+    - No conflicts reported
+  end note
+fork again
+  :Review group name appropriateness;
+fork again
+  :Check class enrollment status;
+end fork
+
+if (Approve group?) then (yes)
+  :Approve group formation;
+  
+  |System|
+  :Set status = ACTIVE;
+  :Initialize group workspace;
+  
+  fork
+    :Create chat room;
+  fork again
+    :Create kanban board;
+  fork again
+    :Set up file storage;
+  fork again
+    :Enable video call;
+  end fork
+  
+  :Send approval notification;
+  
+  |Student (All Members)|
+  :Receive approval notification;
+  :Access group workspace;
+  
+  |Student (Group Leader)|
+  :View project selection page;
+  :Browse available projects;
+  :Select project for group;
+  
+  |System|
+  :Assign project to group;
+  :Notify lecturer;
+  :Create milestones for group;
+  stop
+  
+else (no)
+  |Lecturer|
+  :Provide rejection reason;
+  note right
+    Common reasons:
+    - Unbalanced composition
+    - Inappropriate name
+    - Members have conflicts
+    - Need redistribution
+  end note
+  
+  :Reject group formation;
+  
+  |System|
+  :Set status = FORMING;
+  :Send rejection notification;
+  
+  |Student (Group Leader)|
+  :Receive rejection;
+  :Read lecturer's feedback;
+  :Revise group composition;
+  :Resubmit for approval;
+  stop
+endif
+
+note bottom
+  **Business Rules:**
+  1. Min 3, Max 5 members per group
+  2. Students must be in same class
+  3. One student can only be in one group
+  4. Leader cannot leave (must transfer or disband)
+  5. Formation deadline: 2 weeks into semester
+  
+  **Automatic Actions:**
+  - Invitation expires after 7 days
+  - Auto-remind at day 3 and day 6
+  - Auto-disband if no approval by week 2
+  - Auto-notification for all state changes
+  
+  **Member Management:**
+  - Add member: FORMING or ACTIVE state
+  - Remove member: Requires lecturer approval
+  - Change leader: Requires vote (>50%)
+  - Leave group: Penalties may apply
+  
+  **Time Constraints:**
+  - Formation window: Weeks 1-2 of semester
+  - Invitation response: 7 days
+  - Approval review: 3 days
+  - Project selection: Within 1 week of approval
+  
+  **Penalties:**
+  - Late formation (after week 2): -5% final grade
+  - No group formed: Cannot complete course
+  - Drop from group: Approval required
+end note
+
+@enduml

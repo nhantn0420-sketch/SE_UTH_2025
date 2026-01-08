@@ -1,0 +1,263 @@
+@startuml 4.3.19-state-group
+!theme plain
+
+' ============================================
+' STYLING
+' ============================================
+skinparam stateFontSize 11
+skinparam stateFontName Arial
+skinparam backgroundColor #FAFAFA
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam state {
+    BackgroundColor #FFFFFF
+    BorderColor #1976D2
+    BorderThickness 2
+    FontStyle bold
+    FontSize 11
+    AttributeFontSize 9
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 9
+}
+
+title <size:16><b>Group (Team) Lifecycle - State Machine Diagram</b></size>\n<size:11>UML 2.5 State Machine for Group Entity</size>
+
+' ============================================
+' STATE MACHINE
+' ============================================
+
+[*] --> Forming : createGroup() / initGroupWorkspace()
+
+state Forming <<composite state>> {
+  Forming : entry / generateGroupID()
+  Forming : do / enableInvitations()
+  Forming : exit / validateMemberCount()
+  
+  [*] --> InvitingMembers
+  
+  state InvitingMembers <<substate>> {
+    InvitingMembers : do / searchAndInviteStudents()
+  }
+  
+  state WaitingResponses <<substate>> {
+    WaitingResponses : do / trackInvitationStatus()
+  }
+  
+  InvitingMembers --> WaitingResponses : sendInvitations() [invited.count > 0]
+  WaitingResponses --> InvitingMembers : inviteMore() [members.count < 5]
+}
+
+Forming --> PendingApproval : allAccepted() [members.count >= 3 && members.count <= 5]
+Forming --> Disbanded : [formationTimeout() && members.count < 3]
+Forming --> Forming : memberRejected() [canInviteMore()]
+
+state PendingApproval <<state>> {
+  PendingApproval : entry / notifyLecturer()
+  PendingApproval : do / waitForApprovalDecision()
+  PendingApproval : exit / recordDecision()
+}
+
+PendingApproval --> Active : approve() [lecturer.canApprove() && isValidComposition()]
+PendingApproval --> Forming : reject() [needsModification()]
+
+state Active <<composite state>> {
+  Active : entry / initializeWorkspace()
+  Active : do / enableCollaborationTools()
+  Active : exit / archiveWorkspace()
+  
+  [*] --> NoProject
+  
+  state NoProject <<substate>> {
+    NoProject : do / browseAvailableProjects()
+  }
+  
+  state ProjectSelected <<substate>> {
+    ProjectSelected : do / prepareForFirstCheckpoint()
+  }
+  
+  state WorkingOnCheckpoints <<substate>> {
+    WorkingOnCheckpoints : do / collaborateAndSubmit()
+  }
+  
+  NoProject --> ProjectSelected : selectProject() [hasApprovedProject()]
+  ProjectSelected --> WorkingOnCheckpoints : startCheckpoint1() [projectAssigned()]
+  WorkingOnCheckpoints --> WorkingOnCheckpoints : submitCheckpoint() [hasNextCheckpoint()]
+}
+
+Active --> OnHold : pause() [emergencyOccurred() || memberIssue()]
+Active --> Completed : finish() [semesterEnds() && allWorkComplete()]
+
+state OnHold <<state>> {
+  OnHold : entry / freezeAllActivities()
+  OnHold : do / waitForIssueResolution()
+  OnHold : exit / prepareResume()
+}
+
+OnHold --> Active : resume() [issueResolved() && memberReturned()]
+OnHold --> Disbanded : disband() [!canContinue() || memberDroppedOut()]
+
+state Completed <<state>> {
+  Completed : entry / lockAllSubmissions()
+  Completed : do / calculateFinalGrades()
+  Completed : exit / generateCompletionReports()
+}
+
+Completed --> Evaluated : evaluate() [allCheckpointsGraded()]
+
+state Evaluated <<state>> {
+  Evaluated : entry / finalizeAllGrades()
+  Evaluated : do / processPeerReviews()
+  Evaluated : exit / distributeIndividualGrades()
+}
+
+Evaluated --> Archived : archive() [semesterEnded()]
+
+state Disbanded <<state>> {
+  Disbanded : entry / notifyAllMembers(reason)
+  Disbanded : do / redistributeMembersToOtherGroups()
+  Disbanded : exit / cleanupResources()
+}
+
+Disbanded --> Archived : archive() [cleanupComplete()]
+
+state Archived <<final state>> {
+  Archived : entry / storeHistoricalData()
+  Archived : do / enableReadOnlyAccess()
+  Archived : exit / schedulePermanentDeletion()
+}
+
+Archived --> [*] : deletePermanently() [after(3.years)]
+
+note right of Forming
+  <b><<composite state>> Forming</b>
+  <b>Invariants:</b>
+  • members.count >= 0 && members.count <= 5
+  • hasLeader() == true
+  • allMembers.inSameClass() == true
+  
+  <b>Constraints:</b>
+  • Min members: 3
+  • Max members: 5
+  • Formation deadline: 2 weeks
+  
+  <b>Permissions:</b>
+  • Leader: invite, remove, rename
+  • Members: accept, reject invitation
+end note
+
+note right of Active
+  <b><<composite state>> Active</b>
+  <b>Collaboration Tools Enabled:</b>
+  • Real-time chat (Socket.IO)
+  • Video conferencing (Jitsi)
+  • Shared whiteboard (Excalidraw)
+  • File storage (Cloudinary)
+  • Task kanban board
+  
+  <b>Requirements:</b>
+  • Must select project: within 7 days
+  • Submit checkpoints: on time
+  • Attend meetings: min 80%
+end note
+
+note right of OnHold
+  <b><<state>> OnHold</b>
+  <b>Trigger Conditions:</b>
+  • Member health emergency
+  • Technical infrastructure issue
+  • Force majeure event
+  
+  <b>Duration Limits:</b>
+  • Default: max 2 weeks
+  • Extended: up to 4 weeks (lecturer approval)
+  • Auto-disband: after 4 weeks
+end note
+
+note bottom
+  <b>UML 2.5 State Machine for Group Entity</b>
+  
+  <b>Business Rules (OCL):</b>
+  
+  context Group::submitForApproval()
+    pre: self.status == Forming
+    pre: self.members->size() >= 3 && self.members->size() <= 5
+    pre: self.members->forAll(m | m.isEnrolled())
+    post: self.status == PendingApproval
+    post: lecturer.notified == true
+  
+  context Lecturer::approveGroup(group)
+    pre: group.status == PendingApproval
+    pre: group.isValidComposition()
+    pre: self.canApprove(group)
+    post: group.status == Active
+    post: group.workspace.initialized == true
+  
+  context Group::selectProject(project)
+    pre: self.status == Active
+    pre: self.currentSubstate == NoProject
+    pre: project.isApproved() && project.isAvailable()
+    post: self.currentSubstate == ProjectSelected
+    post: self.project == project
+  
+  <b>State Invariants:</b>
+  • Forming: 0 <= members.count <= 5
+  • PendingApproval: 3 <= members.count <= 5
+  • Active: members.count >= 3 && hasProject
+  • Completed: allCheckpoints.submitted == true
+  
+  <b>Member Management Rules:</b>
+  • Add member: only in Forming or Active (with approval)
+  • Remove member: requires lecturer approval
+  • Change leader: requires majority vote (>50%)
+  • Leave group: penalties apply after week 2
+  
+  <b>Time Constraints:</b>
+  • Formation window: weeks 1-2 of semester
+  • Invitation response: 7 days max
+  • Approval review: 3 days max
+  • Project selection: 7 days after approval
+  • OnHold duration: 2-4 weeks max
+  • Archive retention: 3 years
+  
+  <b>Penalties:</b>
+  • Late formation (after week 2): -5% final grade
+  • No group formed: cannot complete course
+  • Member drops (after week 3): penalty to all members
+  
+  <b>Typical Scenarios:</b>
+  1. Happy path: Forming → PendingApproval → Active → Completed → Evaluated → Archived
+  2. Rejection: Forming → PendingApproval → Forming → PendingApproval → Active
+  3. Timeout: Forming → Disbanded → Archived
+  4. Emergency: Active → OnHold → Active → Completed
+  5. Dropout: Active → OnHold → Disbanded → Archived
+end note
+  - Lecturer must approve formation
+  - System auto-transitions on deadlines
+  - Members can leave (triggers review)
+  
+  **Typical Flow:**
+  Forming → PendingApproval → Active → Completed → Evaluated → Archived
+  
+  **Member Changes:**
+  - Add member: Forming state only
+  - Remove member: Any state (needs lecturer approval)
+  - Change leader: Active state (needs vote)
+  
+  **Time Constraints:**
+  - Forming: 2 weeks
+  - PendingApproval: 3 days
+  - Active: 1 semester (16 weeks)
+  - Archived: retention 3 years
+  
+  **Automatic Transitions:**
+  - Forming → Disbanded: after 2 weeks
+  - Active → Completed: semester end
+  - Completed → Evaluated: after all grades
+end note
+
+@enduml

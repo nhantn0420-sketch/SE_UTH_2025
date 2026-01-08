@@ -146,9 +146,9 @@ Thông tin bổ sung:
 
 | Priority | Description | Implementation Timing |
 |----------|-------------|----------------------|
-| **MUST** | Critical, required for MVP | Sprint 1-4 |
-| **SHOULD** | Important, high value | Sprint 5-6 |
-| **COULD** | Nice to have, lower priority | Sprint 7-8 |
+| **MUST** | Critical, required for MVP | Sprint 1-2 (Week 1-4) |
+| **SHOULD** | Important, high value | Sprint 3 (Week 5-6) |
+| **COULD** | Nice to have, lower priority | Sprint 4 (Week 7-8) |
 | **WON'T** | Out of scope for this version | Future releases |
 
 ### Requirement Status

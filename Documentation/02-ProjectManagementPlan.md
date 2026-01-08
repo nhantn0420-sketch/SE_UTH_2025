@@ -182,32 +182,32 @@ test(api): add unit tests for project endpoints
 
 | # | Deliverable | Description | Format | Due Date |
 |---|-------------|-------------|--------|----------|
-| 1 | **Source Code** | Full codebase (Backend + Frontend) | GitHub Repository | Week 16 |
-| 2 | **Database Schema** | PostgreSQL database với sample data | SQL dump file | Week 16 |
-| 3 | **Docker Images** | Containerized application | Docker Hub | Week 16 |
-| 4 | **Deployed Application** | Live demo trên cloud | URL link | Week 16 |
-| 5 | **API Documentation** | Swagger/OpenAPI specs | HTML + JSON | Week 14 |
+| 1 | **Source Code** | Full codebase (Backend + Frontend) | GitHub Repository | Week 9 |
+| 2 | **Database Schema** | PostgreSQL database với sample data | SQL dump file | Week 9 |
+| 3 | **Docker Images** | Containerized application | Docker Hub | Week 9 |
+| 4 | **Deployed Application** | Live demo trên cloud | URL link | Week 9 |
+| 5 | **API Documentation** | Swagger/OpenAPI specs | HTML + JSON | Week 7 |
 
 ### B. Documentation Deliverables (Tài liệu)
 
 | # | Document | Description | Pages | Due Date |
 |---|----------|-------------|-------|----------|
-| 1 | **Software Requirements Specification (SRS)** | Chi tiết 72 features, use cases | 30-40 | Week 3 |
-| 2 | **Software Design Description (SDD)** | Architecture, ERD, class/sequence diagrams | 40-50 | Week 4 |
-| 3 | **Test Plan & Test Cases** | Test strategy, 100+ test cases | 20-30 | Week 14 |
-| 4 | **Test Report** | Test results, bug reports, coverage | 10-15 | Week 15 |
-| 5 | **User Manual** | Hướng dẫn sử dụng cho 5 roles | 30-40 | Week 15 |
-| 6 | **Installation Guide** | Deploy instructions (local + cloud) | 10-15 | Week 15 |
-| 7 | **Final Report** | Tài liệu đồ án tốt nghiệp đầy đủ | 150-200 | Week 16 |
+| 1 | **Software Requirements Specification (SRS)** | Chi tiết 72 features, use cases | 30-40 | Week 2 |
+| 2 | **Software Design Description (SDD)** | Architecture, ERD, class/sequence diagrams | 40-50 | Week 3 |
+| 3 | **Test Plan & Test Cases** | Test strategy, 100+ test cases | 20-30 | Week 7 |
+| 4 | **Test Report** | Test results, bug reports, coverage | 10-15 | Week 8 |
+| 5 | **User Manual** | Hướng dẫn sử dụng cho 5 roles | 30-40 | Week 8 |
+| 6 | **Installation Guide** | Deploy instructions (local + cloud) | 10-15 | Week 8 |
+| 7 | **Final Report** | Tài liệu đồ án tốt nghiệp đầy đủ | 150-200 | Week 9 |
 
 ### C. Presentation Deliverables
 
 | # | Deliverable | Description | Duration | Due Date |
 |---|-------------|-------------|----------|----------|
-| 1 | **Mid-term Presentation** | Demo progress, architecture | 20 min | Week 8 |
-| 2 | **Final Presentation** | Full demo, Q&A | 30 min | Week 16 |
-| 3 | **Demo Video** | Screen recording với voice-over | 10 min | Week 16 |
-| 4 | **Slide Deck** | PowerPoint/Google Slides | 30-40 slides | Week 16 |
+| 1 | **Mid-term Presentation** | Demo progress, architecture | 20 min | Week 4 |
+| 2 | **Final Presentation** | Full demo, Q&A | 30 min | Week 9 |
+| 3 | **Demo Video** | Screen recording với voice-over | 10 min | Week 9 |
+| 4 | **Slide Deck** | PowerPoint/Google Slides | 30-40 slides | Week 9 |
 
 ---
 
@@ -381,7 +381,17 @@ test(api): add unit tests for project endpoints
 
 ---
 
-## 2.6. CONFIGURATION MANAGEMENT (Quản lý cấu hình)
+## 2.6. PROJECT TIMELINE
+
+### Gantt Chart
+
+![Figure 2.1: Project Timeline - Gantt Chart](02-ProjectManagementPlan/diagrams/2.1-gantt-chart.png)
+
+*Figure 2.1: Gantt chart showing the complete 9-week project timeline with Sprint 0-4, including milestones, deliverables, and key dates from 2/12/2025 to 31/1/2026.*
+
+---
+
+## 2.7. CONFIGURATION MANAGEMENT (Quản lý cấu hình)
 
 ### Version Control
 
@@ -424,11 +434,11 @@ collabsphere/
 - **PATCH**: Bug fixes (v1.0.0 → v1.0.1)
 
 **Release Schedule**:
-- `v0.1.0` - Week 4: Backend core APIs
-- `v0.2.0` - Week 8: AI & Real-time features
-- `v0.3.0` - Week 12: Frontend MVP
-- `v0.4.0` - Week 14: Full features
-- `v1.0.0` - Week 16: Production release
+- `v0.1.0` - Week 2: Backend core APIs
+- `v0.2.0` - Week 4: AI & Real-time features
+- `v0.3.0` - Week 6: Frontend MVP
+- `v0.4.0` - Week 7: Full features
+- `v1.0.0` - Week 9: Production release
 
 ### Code Quality Standards
 

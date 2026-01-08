@@ -1,0 +1,226 @@
+@startuml Checkpoint Evaluation Workflow - Activity Diagram
+!theme plain
+skinparam activityFontSize 12
+skinparam activityFontName Arial
+
+title Checkpoint Evaluation Workflow - Activity Diagram
+
+|Student (Group Leader)|
+start
+:Navigate to checkpoint submission;
+:Upload required files;
+note right
+  File types:
+  - Documents (PDF, DOCX)
+  - Code (ZIP, GitHub link)
+  - Presentations (PPT, PDF)
+  - Videos (MP4, YouTube link)
+end note
+
+:Write submission notes;
+:Review submission;
+
+if (All required files attached?) then (no)
+  :Show missing files error;
+  stop
+else (yes)
+  :Click Submit button;
+endif
+
+|System|
+:Record submission timestamp;
+
+if (Submitted before deadline?) then (yes)
+  :Set status = SUBMITTED;
+  :No penalty applied;
+else (no)
+  :Calculate late penalty;
+  note right
+    Late Penalty Formula:
+    - Day 1: -10%
+    - Day 2: -20%
+    - Day 3: -30%
+    - After 3 days: Auto-fail (0 points)
+  end note
+  
+  if (Within grace period? (3 days)) then (yes)
+    :Set status = LATE;
+    :Apply penalty percentage;
+  else (no)
+    :Set status = MISSED;
+    :Automatic zero grade;
+    :Notify group and lecturer;
+    stop
+  endif
+endif
+
+:Upload files to Cloudinary;
+:Run plagiarism check;
+
+fork
+  :Send notification to lecturer;
+fork again
+  :Update group dashboard;
+fork again
+  :Log submission in history;
+end fork
+
+|Lecturer|
+:Receive notification;
+:Open submissions list;
+:Select checkpoint to review;
+
+partition "Evaluation Loop" {
+  repeat
+    :Review next group submission;
+    :Download and check files;
+    
+    fork
+      :Evaluate technical quality;
+    fork again
+      :Check completeness;
+    fork again
+      :Review documentation;
+    fork again
+      :Test functionality (if applicable);
+    end fork
+    
+    :Calculate raw score (0-100);
+    
+    if (Late submission?) then (yes)
+      :Apply late penalty;
+      note right
+        Final Score = Raw Score × (1 - Penalty%)
+        Example: 85 × (1 - 0.10) = 76.5
+      end note
+    else (no)
+      :Final score = Raw score;
+    endif
+    
+    :Write detailed feedback;
+    note right
+      Feedback includes:
+      - Strengths
+      - Weaknesses
+      - Suggestions for improvement
+      - Specific comments on deliverables
+    end note
+    
+    :Enter grade (0-10 scale);
+    
+    if (Grade valid? (0-10)) then (no)
+      :Show validation error;
+    else (yes)
+      :Save grade;
+    endif
+    
+  repeat while (More submissions to review?) is (yes)
+  ->no;
+}
+
+:Review all grades;
+:Check for outliers;
+
+if (Any grade seems incorrect?) then (yes)
+  :Revise specific grades;
+else (no)
+endif
+
+:Lock all grades;
+:Set checkpoint status = GRADED;
+
+|System|
+:Calculate group grades;
+note right
+  Group Grade Calculation:
+  - All members get same checkpoint grade
+  - Will be adjusted by peer review later
+  - Contributes to final grade (weighted)
+end note
+
+fork
+  :Send grade notifications to students;
+fork again
+  :Update progress tracking;
+fork again
+  :Trigger peer review (if configured);
+end fork
+
+|Student|
+:Receive grade notification;
+:View grade and feedback;
+
+if (Disagree with grade?) then (yes)
+  :Submit appeal;
+  note right
+    Appeal must include:
+    - Specific concerns
+    - Evidence/justification
+    - Requested action
+    
+    Deadline: 3 days after grade release
+  end note
+  
+  |System|
+  :Notify Department Head;
+  
+  |Department Head|
+  :Review appeal;
+  :Check submission and grade;
+  :Consult with lecturer;
+  
+  if (Appeal valid?) then (yes)
+    :Request regrade;
+    |Lecturer|
+    :Reevaluate submission;
+    :Update grade;
+    |System|
+    :Notify student of new grade;
+  else (no)
+    :Reject appeal;
+    |System|
+    :Notify student;
+    :Grade remains unchanged;
+  endif
+else (no)
+  :Accept grade;
+endif
+
+|System|
+:Update final grade calculation;
+:Archive checkpoint;
+stop
+
+note bottom
+  **Business Rules:**
+  1. Only group leader can submit
+  2. All members must be present (not dropped)
+  3. Late submissions: max 3 days after deadline
+  4. Plagiarism detection: automatic (Turnitin API)
+  5. Appeal window: 3 days after grade release
+  6. Regrade: different lecturer reviews
+  
+  **Grading Scale:**
+  - 9.0-10: Excellent (A)
+  - 8.0-8.9: Very Good (B+)
+  - 7.0-7.9: Good (B)
+  - 6.0-6.9: Satisfactory (C+)
+  - 5.0-5.9: Pass (C)
+  - 0-4.9: Fail (F)
+  
+  **Weight in Final Grade:**
+  - Checkpoint 1: 5%
+  - Checkpoint 2: 10%
+  - Checkpoint 3: 15%
+  - Checkpoint 4: 20%
+  - Total Checkpoints: 50% of final grade
+  
+  **Time Constraints:**
+  - Submission deadline: as configured per checkpoint
+  - Grace period: 3 days (with penalty)
+  - Grading deadline: 7 days after submission
+  - Appeal window: 3 days after grade release
+  - Regrade turnaround: 3 days
+end note
+
+@enduml

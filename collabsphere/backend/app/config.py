@@ -46,7 +46,7 @@ class Settings(BaseSettings):
     smtp_password: Optional[str] = None
     
     # CORS
-    cors_origins: list = ["http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
+    cors_origins: list = ["http://localhost", "http://localhost:80", "http://localhost:3000", "http://localhost:3001", "http://localhost:5173", "http://127.0.0.1", "http://127.0.0.1:3000", "http://127.0.0.1:3001"]
     
     class Config:
         env_file = ".env"
