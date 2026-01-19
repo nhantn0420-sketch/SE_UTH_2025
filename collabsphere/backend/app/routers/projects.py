@@ -31,6 +31,38 @@ router = APIRouter()
 
 # ==================== PROJECT MANAGEMENT ====================
 
+@router.get("/my", response_model=List[ProjectResponse])
+async def get_my_projects(
+    status: Optional[ProjectStatus] = Query(None),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_lecturer)
+):
+    """
+    Lecturer: Get my own projects.
+    """
+    statement = select(Project).where(Project.creator_id == current_user.id)
+    
+    if status:
+        statement = statement.where(Project.status == status)
+    
+    statement = statement.offset(skip).limit(limit)
+    projects = session.exec(statement).all()
+    
+    # Add milestone count
+    result = []
+    for proj in projects:
+        count = session.exec(
+            select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == proj.id)
+        ).one()
+        proj_dict = proj.dict()
+        proj_dict['milestone_count'] = count
+        result.append(ProjectResponse(**proj_dict))
+    
+    return result
+
+
 @router.get("/", response_model=List[ProjectResponse])
 async def get_projects(
     status: Optional[ProjectStatus] = Query(None),

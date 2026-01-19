@@ -1,0 +1,143 @@
+@startuml 4.1-production-deployment
+!theme plain
+skinparam linetype ortho
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam nodesep 100
+skinparam ranksep 120
+left to right direction
+
+title Production Deployment Architecture - CollabSphere
+
+' Define professional UML styles
+skinparam node {
+    BackgroundColor #E8EAF6
+    BorderColor #3F51B5
+    FontSize 11
+    FontStyle bold
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #757575
+    FontSize 10
+}
+
+skinparam artifact {
+    BackgroundColor #FFF9C4
+    BorderColor #F9A825
+    FontSize 10
+}
+
+skinparam database {
+    BackgroundColor #FCE4EC
+    BorderColor #C2185B
+    FontSize 10
+}
+
+skinparam cloud {
+    BackgroundColor #E3F2FD
+    BorderColor #1976D2
+}
+
+' === TIER 0: End Users ===
+actor "End Users" as users
+
+' === TIER 1: Load Balancer ===
+node "Load Balancer\n<<CloudFlare/ALB>>" as lb {
+    component "SSL/TLS\nDDoS Protection\nHealth Check" as lb_comp
+}
+
+' === TIER 2: Cloud Infrastructure ===
+cloud "Cloud Provider <<AWS/Azure/GCP>>" {
+    
+    ' Web Server Layer
+    node "Web Server VM-1\n<<Ubuntu 22.04>>" as vm1 {
+        artifact "nginx:1.25" as nginx1
+    }
+    
+    node "Web Server VM-2\n<<Ubuntu 22.04>>" as vm2 {
+        artifact "nginx:1.25" as nginx2
+    }
+    
+    ' Application Layer
+    node "App Server-1\n<<Ubuntu 22.04>>" as app_vm1 {
+        artifact "FastAPI\nPython 3.11" as app1
+    }
+    
+    node "App Server-2\n<<Ubuntu 22.04>>" as app_vm2 {
+        artifact "FastAPI\nPython 3.11" as app2
+    }
+    
+    ' Database Layer
+    node "Database Master\n<<PostgreSQL 15>>" as db_master_node {
+        database "collabsphere_db\n(Primary)" as db_master
+    }
+    
+    node "DB Replica-1\n<<PostgreSQL 15>>" as db_rep1_node {
+        database "Read Replica" as db_replica1
+    }
+    
+    node "DB Replica-2\n<<PostgreSQL 15>>" as db_rep2_node {
+        database "Read Replica" as db_replica2
+    }
+}
+
+' === Deployment Relationships ===
+' Layer 1: Users to Load Balancer
+users -right-> lb_comp : <<HTTPS>>\nPort 443
+
+' Layer 2: Load Balancer to Web Servers
+lb_comp -right-> nginx1
+lb_comp -right-> nginx2
+
+' Layer 3: Web Servers to App Servers
+nginx1 -right-> app1 : <<HTTP>>\nPort 8000
+nginx2 -right-> app2 : <<HTTP>>\nPort 8000
+
+' Layer 4: App Servers to Database
+app1 -right-> db_master : <<Write>>\nSQL
+app2 -right-> db_master : <<Write>>\nSQL
+
+' Read connections to replicas
+app1 -[#blue]down-> db_replica1 : <<Read>>\nSQL
+app2 -[#blue]down-> db_replica2 : <<Read>>\nSQL
+
+' Database replication
+db_master -[#red,dashed]down-> db_replica1 : <<replication>>\nAsync
+db_master -[#red,dashed]down-> db_replica2 : <<replication>>\nAsync
+
+' === Layout Control (Hidden Links) ===
+' Vertical alignment - keep pairs aligned
+vm1 -[hidden]down- vm2
+app_vm1 -[hidden]down- app_vm2
+db_rep1_node -[hidden]down- db_rep2_node
+
+' Horizontal flow - force left to right progression
+users -[hidden]right- lb
+lb -[hidden]right- vm1
+lb -[hidden]right- vm2
+vm1 -[hidden]right- app_vm1
+vm2 -[hidden]right- app_vm2
+app_vm1 -[hidden]right- db_master_node
+app_vm2 -[hidden]right- db_master_node
+
+' Keep replicas aligned and below master
+db_master_node -[hidden]down- db_rep1_node
+db_rep1_node -[hidden]right- db_rep2_node
+
+legend right
+    |= Component |= Technology |= Instances |
+    | Load Balancer | CloudFlare/AWS ALB | 1 |
+    | Web Server | Nginx 1.25+ | 2 |
+    | Backend | FastAPI + Python 3.11+ | 2+ |
+    | Database | PostgreSQL 15 | 1 Master + 2 Replicas |
+    
+    **Scalability:**
+    - Horizontal scaling for web/backend
+    - Read replicas for database load distribution
+    - Auto-scaling based on metrics
+endlegend
+
+@enduml

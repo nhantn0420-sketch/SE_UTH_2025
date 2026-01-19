@@ -43,6 +43,11 @@ const Header = ({ onMenuClick }) => {
     setAnchorEl(null);
   };
 
+  const handleSettings = () => {
+    navigate('/settings');
+    handleProfileMenuClose();
+  };
+
   const handleNotificationOpen = (event) => {
     setNotificationAnchor(event.currentTarget);
   };
@@ -167,7 +172,7 @@ const Header = ({ onMenuClick }) => {
             </ListItemIcon>
             <ListItemText>Trang cá nhân</ListItemText>
           </MenuItem>
-          <MenuItem onClick={handleProfileMenuClose}>
+          <MenuItem onClick={handleSettings}>
             <ListItemIcon>
               <SettingsIcon fontSize="small" />
             </ListItemIcon>

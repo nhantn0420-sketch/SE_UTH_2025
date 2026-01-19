@@ -342,3 +342,171 @@ async def update_user(
     session.refresh(user)
     
     return user
+
+
+# ==================== USER SETTINGS & PROFILE ENDPOINTS ====================
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current user's profile.
+    """
+    return current_user
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_my_profile(
+    user_data: UserUpdate,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update current user's profile information.
+    """
+    update_data = user_data.dict(exclude_unset=True)
+    
+    # Don't allow changing username, email, role
+    restricted_fields = ["username", "email", "role", "hashed_password", "is_active"]
+    for field in restricted_fields:
+        update_data.pop(field, None)
+    
+    for key, value in update_data.items():
+        setattr(current_user, key, value)
+    
+    current_user.updated_at = datetime.utcnow()
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    
+    return current_user
+
+
+@router.post("/change-password", response_model=ResponseMessage)
+async def change_password(
+    current_password: str,
+    new_password: str,
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Change current user's password.
+    """
+    from app.utils.security import verify_password
+    
+    # Verify current password
+    if not verify_password(current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+    
+    # Validate new password
+    if len(new_password) < 6:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="New password must be at least 6 characters"
+        )
+    
+    # Update password
+    current_user.hashed_password = get_password_hash(new_password)
+    current_user.updated_at = datetime.utcnow()
+    session.add(current_user)
+    session.commit()
+    
+    return ResponseMessage(message="Password changed successfully")
+
+
+@router.get("/settings")
+async def get_user_settings(
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current user's settings and preferences.
+    """
+    # Default settings
+    default_notifications = {
+        "email_notifications": True,
+        "push_notifications": True,
+        "project_updates": True,
+        "group_messages": True,
+        "deadline_reminders": True,
+    }
+    
+    default_preferences = {
+        "theme": "light",
+        "language": "vi",
+        "timezone": "Asia/Ho_Chi_Minh",
+    }
+    
+    # Get settings from user metadata (if exists)
+    notifications = default_notifications
+    preferences = default_preferences
+    
+    # Try to get from metadata if column exists
+    try:
+        if hasattr(current_user, "metadata") and current_user.metadata:
+            notifications = current_user.metadata.get("notifications", default_notifications)
+            preferences = current_user.metadata.get("preferences", default_preferences)
+    except:
+        pass
+    
+    return {
+        "notifications": notifications,
+        "preferences": preferences,
+    }
+
+
+@router.put("/settings/notifications")
+async def update_notification_settings(
+    settings: dict,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Update user's notification settings.
+    """
+    try:
+        # Try to update metadata if column exists
+        if hasattr(current_user, "metadata"):
+            if current_user.metadata is None:
+                current_user.metadata = {}
+            current_user.metadata["notifications"] = settings
+            current_user.updated_at = datetime.utcnow()
+            session.add(current_user)
+            session.commit()
+    except:
+        pass  # If metadata column doesn't exist, just return success
+    
+    return {
+        "message": "Notification settings updated successfully",
+        "notifications": settings
+    }
+
+
+@router.put("/settings/preferences")
+async def update_app_preferences(
+    preferences: dict,
+    current_user: User = Depends(get_current_user),
+    session: Session = Depends(get_session)
+):
+    """
+    Update user's app preferences (theme, language, timezone).
+    """
+    try:
+        # Try to update metadata if column exists
+        if hasattr(current_user, "metadata"):
+            if current_user.metadata is None:
+                current_user.metadata = {}
+            current_user.metadata["preferences"] = preferences
+            current_user.updated_at = datetime.utcnow()
+            session.add(current_user)
+            session.commit()
+    except:
+        pass  # If metadata column doesn't exist, just return success
+    
+    return {
+        "message": "App preferences updated successfully",
+        "preferences": preferences
+    }

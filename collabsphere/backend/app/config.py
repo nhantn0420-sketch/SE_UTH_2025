@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     app_version: str = "1.0.0"
     debug: bool = True
     
-    # Database - Using SQLite for demo, change to PostgreSQL for production
+    # Database - Reads from DATABASE_URL env var, defaults to SQLite for local dev
     database_url: str = "sqlite:///./collabsphere.db"
     
     # Security

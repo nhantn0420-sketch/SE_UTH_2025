@@ -94,17 +94,37 @@ const ProjectCreate = () => {
   const handleSubmitProject = async () => {
     const values = getValues();
     const finalData = {
-      ...projectData,
-      ...values,
-      milestones,
+      title: projectData.title || values.title,
+      description: projectData.description || values.description,
+      goals: projectData.goals || values.goals || null,
+      requirements: projectData.requirements || values.requirements || null,
+      duration_weeks: parseInt(projectData.duration_weeks || values.duration_weeks || 12),
+      max_group_size: parseInt(projectData.max_members || values.max_members || 5),
+      min_group_size: parseInt(projectData.min_members || values.min_members || 3),
+      curriculum_id: projectData.curriculum_id || values.curriculum_id || null
     };
 
     setLoading(true);
     try {
+      // Step 1: Create project first
       const project = await projectService.createProject(finalData);
+      
+      // Step 2: If milestones exist, add them one by one
+      if (milestones && milestones.length > 0) {
+        for (const milestone of milestones) {
+          await projectService.createMilestone(project.id, {
+            title: milestone.title,
+            description: milestone.description || '',
+            week_number: parseInt(milestone.week) || 1,
+            deliverables: null
+          });
+        }
+      }
+      
       toast.success('Tạo đề tài thành công');
       navigate(`/projects/${project.id}`);
     } catch (err) {
+      console.error('Create project error:', err);
       toast.error(err.response?.data?.detail || 'Tạo đề tài thất bại');
     } finally {
       setLoading(false);
@@ -143,15 +163,27 @@ const ProjectCreate = () => {
                 label="Số thành viên tối đa"
                 {...register('max_members')}
                 defaultValue={5}
+                inputProps={{ min: 2, max: 10 }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 type="number"
-                label="Thời gian (tuần)"
+                label="Số thành viên tối thiểu"
+                {...register('min_members')}
+                defaultValue={3}
+                inputProps={{ min: 1, max: 10 }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Thời gian thực hiện (tuần)"
                 {...register('duration_weeks')}
-                defaultValue={8}
+                defaultValue={12}
+                inputProps={{ min: 1, max: 52 }}
               />
             </Grid>
           </Grid>

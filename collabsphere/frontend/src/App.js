@@ -14,6 +14,7 @@ import AdminDashboard from './pages/Admin/Dashboard';
 import StaffDashboard from './pages/Staff/Dashboard';
 import HeadDashboard from './pages/Head/Dashboard';
 import LecturerDashboard from './pages/Lecturer/Dashboard';
+import LecturerEvaluationList from './pages/Lecturer/EvaluationList';
 import StudentDashboard from './pages/Student/Dashboard';
 import StudentResources from './pages/Student/Resources';
 import StudentChatList from './pages/Student/ChatList';
@@ -49,6 +50,7 @@ import AIChatbot from './pages/AI/AIChatbot';
 
 // Profile
 import Profile from './pages/Profile/Profile';
+import Settings from './pages/Settings/Settings';
 
 // Context
 import { useAuth } from './context/AuthContext';
@@ -112,6 +114,7 @@ function App() {
 
         {/* Lecturer routes */}
         <Route path="/lecturer" element={<ProtectedRoute allowedRoles={['lecturer']}><LecturerDashboard /></ProtectedRoute>} />
+        <Route path="/evaluations" element={<ProtectedRoute allowedRoles={['lecturer']}><LecturerEvaluationList /></ProtectedRoute>} />
 
         {/* Student routes */}
         <Route path="/student" element={<ProtectedRoute allowedRoles={['student']}><StudentDashboard /></ProtectedRoute>} />
@@ -133,6 +136,7 @@ function App() {
         <Route path="/ai-assistant" element={<AIChatbot />} />
 
         <Route path="/profile" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
 
       {/* 404 */}

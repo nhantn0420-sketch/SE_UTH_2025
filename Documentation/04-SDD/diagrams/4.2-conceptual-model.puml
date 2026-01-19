@@ -1,0 +1,118 @@
+@startuml 4.2-conceptual-model
+!define LIGHTBLUE #E3F2FD
+!define LIGHTGREEN #E8F5E9
+!define LIGHTORANGE #FFF3E0
+!define LIGHTPURPLE #F3E5F5
+!define LIGHTYELLOW #FFFDE7
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+skinparam nodesep 100
+skinparam ranksep 120
+
+skinparam component {
+  BackgroundColor white
+  BorderColor #333333
+  BorderThickness 2
+  FontSize 12
+  FontStyle bold
+}
+
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor #1976D2
+  BorderThickness 3
+  FontSize 14
+  FontStyle bold
+}
+
+title CollabSphere Database - Conceptual Model\nProject-Based Learning Management System
+
+' Top level database
+rectangle "COLLABSPHERE DATABASE" as DB #FFFFFF
+
+' Core entities
+package "USERS" as USERS #E3F2FD {
+  rectangle "- Admin" as admin
+  rectangle "- Staff" as staff
+  rectangle "- Head" as head
+  rectangle "- Lecturer" as lecturer
+  rectangle "- Student" as student
+}
+
+package "ACADEMIC" as ACADEMIC #E8F5E9 {
+  rectangle "- Subject" as subject
+  rectangle "- Class" as class
+  rectangle "- Members" as members
+}
+
+package "PROJECTS" as PROJECTS #FFF3E0 {
+  rectangle "- Project" as project
+  rectangle "- Milestone" as milestone
+}
+
+' Middle layer
+package "GROUPS & TEAMS" as GROUPS #FFF3E0 {
+  rectangle "- Group" as group
+  rectangle "- Group Members" as group_members
+  rectangle "- Tasks & Checkpoints" as tasks
+}
+
+' Bottom layer
+package "COLLABORATION" as COLLAB #F3E5F5 {
+  rectangle "- Chat" as chat
+  rectangle "- Meetings" as meetings
+  rectangle "- Resources" as resources
+  rectangle "- Whiteboard" as whiteboard
+}
+
+package "EVALUATION" as EVAL #FFFDE7 {
+  rectangle "- Peer Review" as peer_review
+  rectangle "- Evaluations" as evaluations
+  rectangle "- Feedback" as feedback
+}
+
+package "NOTIFICATION" as NOTIF #F5F5F5 {
+  rectangle "- Email" as email
+  rectangle "- Real-time" as realtime
+}
+
+' Relationships
+DB -down-> USERS : manages
+DB -down-> ACADEMIC : organizes
+DB -down-> PROJECTS : defines
+
+USERS -down-> GROUPS : participate in
+ACADEMIC -down-> GROUPS : assigns to
+PROJECTS -down-> GROUPS : implements
+
+GROUPS -down-> COLLAB : uses
+GROUPS -down-> EVAL : assessed by
+
+COLLAB -down-> NOTIF : triggers
+EVAL -down-> NOTIF : triggers
+
+' Layout hints
+USERS -[hidden]right-> ACADEMIC
+ACADEMIC -[hidden]right-> PROJECTS
+COLLAB -[hidden]right-> EVAL
+
+legend bottom right
+  <b>Conceptual Database Model</b>
+  
+  Shows high-level organization of
+  CollabSphere database entities and
+  their relationships
+  
+  <b>Color Legend:</b>
+  <#E3F2FD>  </color> Users & Authentication
+  <#E8F5E9>  </color> Academic Management
+  <#FFF3E0>  </color> Project & Group
+  <#F3E5F5>  </color> Collaboration
+  <#FFFDE7>  </color> Evaluation
+  <#F5F5F5>  </color> Notification
+end legend
+
+@enduml

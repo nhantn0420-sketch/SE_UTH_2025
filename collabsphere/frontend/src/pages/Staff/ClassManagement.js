@@ -34,10 +34,9 @@ import subjectService from '../../services/subjectService';
 import userService from '../../services/userService';
 
 const SEMESTERS = [
-  { value: 'HK1_2024', label: 'Học kỳ 1 - 2024' },
-  { value: 'HK2_2024', label: 'Học kỳ 2 - 2024' },
-  { value: 'HK1_2025', label: 'Học kỳ 1 - 2025' },
-  { value: 'HK2_2025', label: 'Học kỳ 2 - 2025' },
+  { value: 'spring', label: 'Học kỳ 1 (Spring)' },
+  { value: 'summer', label: 'Học kỳ Hè (Summer)' },
+  { value: 'fall', label: 'Học kỳ 2 (Fall)' },
 ];
 
 const ClassManagement = () => {
@@ -83,7 +82,7 @@ const ClassManagement = () => {
     if (classItem) {
       reset(classItem);
     } else {
-      reset({ code: '', name: '', subject_id: '', lecturer_id: '', semester: '', max_students: 40 });
+      reset({ code: '', name: '', subject_id: '', lecturer_id: '', semester: '', academic_year: '2024-2025', max_students: 40 });
     }
     setOpenDialog(true);
   };
@@ -331,6 +330,15 @@ const ClassManagement = () => {
                 </MenuItem>
               ))}
             </TextField>
+            <TextField
+              fullWidth
+              label="Năm học (VD: 2024-2025)"
+              margin="normal"
+              {...register('academic_year', { required: 'Năm học là bắt buộc' })}
+              error={!!errors.academic_year}
+              helperText={errors.academic_year?.message}
+              placeholder="2024-2025"
+            />
             <TextField
               fullWidth
               label="Sĩ số tối đa"

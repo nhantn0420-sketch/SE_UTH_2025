@@ -76,9 +76,15 @@ class Curriculum(CurriculumBase, table=True):
     projects: List["Project"] = Relationship(back_populates="curriculum")
 
 
-class CurriculumCreate(CurriculumBase):
+class CurriculumCreate(SQLModel):
     """Schema for creating a curriculum"""
-    pass
+    subject_id: Optional[int] = None  # Will be set from URL path
+    title: str = Field(max_length=200)
+    description: Optional[str] = None
+    learning_outcomes: Optional[str] = None
+    content_outline: Optional[str] = None
+    duration_weeks: int = Field(default=15, ge=1, le=52)
+    is_active: bool = Field(default=True)
 
 
 class CurriculumUpdate(SQLModel):

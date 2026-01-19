@@ -13,9 +13,9 @@ import {
   DialogContent,
   DialogActions,
   Chip,
-  Alert,
   CircularProgress,
   InputAdornment,
+  MenuItem,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
@@ -70,20 +70,20 @@ const CurriculumManagement = () => {
       setCurricula([
         {
           id: 1,
-          code: 'CUR-CS101',
-          name: 'Giáo trình lập trình Python cơ bản',
+          title: 'Giáo trình lập trình Python cơ bản',
           subject: { code: 'CS101', name: 'Lập trình cơ bản' },
           description: 'Giáo trình dành cho sinh viên năm nhất',
-          objectives: ['Hiểu cú pháp Python', 'Viết được chương trình đơn giản'],
+          learning_outcomes: JSON.stringify(['Hiểu cú pháp Python', 'Viết được chương trình đơn giản']),
+          duration_weeks: 15,
           created_at: new Date().toISOString(),
         },
         {
           id: 2,
-          code: 'CUR-CS201',
-          name: 'Giáo trình cấu trúc dữ liệu và giải thuật',
+          title: 'Giáo trình cấu trúc dữ liệu và giải thuật',
           subject: { code: 'CS201', name: 'Cấu trúc dữ liệu' },
           description: 'Giáo trình nâng cao về CTDL',
-          objectives: ['Nắm vững các cấu trúc dữ liệu cơ bản', 'Phân tích độ phức tạp'],
+          learning_outcomes: JSON.stringify(['Nắm vững các cấu trúc dữ liệu cơ bản', 'Phân tích độ phức tạp']),
+          duration_weeks: 15,
           created_at: new Date().toISOString(),
         },
       ]);
@@ -99,16 +99,16 @@ const CurriculumManagement = () => {
   const onSubmit = async (data) => {
     setSubmitting(true);
     try {
-      // Parse objectives from string to array
-      const objectives = data.objectives 
-        ? data.objectives.split(';').map(o => o.trim()).filter(o => o)
-        : [];
+      // Parse learning_outcomes from string to JSON array
+      const learning_outcomes = data.learning_outcomes 
+        ? JSON.stringify(data.learning_outcomes.split(';').map(o => o.trim()).filter(o => o))
+        : null;
       
       const curriculumData = {
-        code: data.code,
-        name: data.name,
+        title: data.title,
         description: data.description || '',
-        objectives: objectives,
+        learning_outcomes: learning_outcomes,
+        duration_weeks: parseInt(data.duration_weeks) || 15,
       };
       
       if (editingCurriculum) {
@@ -166,8 +166,7 @@ const CurriculumManagement = () => {
   };
 
   const columns = [
-    { field: 'code', headerName: 'Mã giáo trình', width: 130 },
-    { field: 'name', headerName: 'Tên giáo trình', flex: 1, minWidth: 200 },
+    { field: 'title', headerName: 'Tiêu đề giáo trình', flex: 1, minWidth: 250 },
     {
       field: 'subject',
       headerName: 'Môn học',
@@ -182,15 +181,23 @@ const CurriculumManagement = () => {
       ),
     },
     {
-      field: 'objectives',
+      field: 'duration_weeks',
+      headerName: 'Thời gian',
+      width: 120,
+      renderCell: (params) => `${params.value || 15} tuần`,
+    },
+    {
+      field: 'learning_outcomes',
       headerName: 'Mục tiêu',
       width: 120,
-      renderCell: (params) => (
-        <Chip
-          label={`${params.row.objectives?.length || 0} mục tiêu`}
-          size="small"
-        />
-      ),
+      renderCell: (params) => {
+        try {
+          const outcomes = params.value ? JSON.parse(params.value) : [];
+          return <Chip label={`${outcomes.length || 0} mục tiêu`} size="small" />;
+        } catch {
+          return <Chip label="0 mục tiêu" size="small" />;
+        }
+      },
     },
     {
       field: 'actions',
@@ -212,8 +219,8 @@ const CurriculumManagement = () => {
 
   const filteredCurricula = curricula.filter(
     (c) =>
-      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.code.toLowerCase().includes(searchTerm.toLowerCase())
+      c.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -285,37 +292,38 @@ const CurriculumManagement = () => {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Mã giáo trình"
-                  {...register('code', { required: 'Vui lòng nhập mã' })}
-                  error={!!errors.code}
-                  helperText={errors.code?.message}
-                />
+                  label="Môn học"
+                  select
+                  {...register('subject_id', { required: 'Vui lòng chọn môn học' })}
+                  error={!!errors.subject_id}
+                  helperText={errors.subject_id?.message}
+                  defaultValue=""
+                >
+                  <MenuItem value="">-- Chọn môn học --</MenuItem>
+                  {subjects.map((s) => (
+                    <MenuItem key={s.id} value={s.id}>
+                      {s.code} - {s.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  label="Môn học"
-                  select
-                  SelectProps={{ native: true }}
-                  {...register('subject_id', { required: 'Vui lòng chọn môn học' })}
-                  error={!!errors.subject_id}
-                  helperText={errors.subject_id?.message}
-                >
-                  <option value="">-- Chọn môn học --</option>
-                  {subjects.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.code} - {s.name}
-                    </option>
-                  ))}
-                </TextField>
+                  label="Thời gian (tuần)"
+                  type="number"
+                  {...register('duration_weeks')}
+                  defaultValue="15"
+                  helperText="Số tuần học (1-52)"
+                />
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Tên giáo trình"
-                  {...register('name', { required: 'Vui lòng nhập tên' })}
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
+                  label="Tiêu đề giáo trình"
+                  {...register('title', { required: 'Vui lòng nhập tiêu đề' })}
+                  error={!!errors.title}
+                  helperText={errors.title?.message}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -330,11 +338,11 @@ const CurriculumManagement = () => {
               <Grid item xs={12}>
                 <TextField
                   fullWidth
-                  label="Mục tiêu (phân cách bằng dấu ;)"
+                  label="Mục tiêu học tập (phân cách bằng dấu ;)"
                   multiline
                   rows={3}
-                  {...register('objectives')}
-                  helperText="Ví dụ: Mục tiêu 1; Mục tiêu 2; Mục tiêu 3"
+                  {...register('learning_outcomes')}
+                  helperText="Ví dụ: Hiểu khái niệm cơ bản; Áp dụng được kiến thức; Phân tích vấn đề"
                 />
               </Grid>
             </Grid>
