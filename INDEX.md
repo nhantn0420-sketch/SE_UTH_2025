@@ -1,427 +1,360 @@
-# 🔍 QUICK INDEX - Tìm Kiếm Nhanh
+# 📋 CollabSphere - Project Navigation Index
 
-**Cập nhật**: 4/1/2026
-
----
-
-## 🎯 MỤC LỤC NHANH
-
-### [A. BẮT ĐẦU TẠI ĐÂY](#a-bắt-đầu-tại-đây)
-### [B. TÌM THEO SECTION](#b-tìm-theo-section)
-### [C. TÌM THEO LOẠI NỘI DUNG](#c-tìm-theo-loại-nội-dung)
-### [D. TÌM THEO ROLE](#d-tìm-theo-role)
-### [E. TÌM CODE](#e-tìm-code)
-### [F. TÌM DIAGRAM](#f-tìm-diagram)
+**Cập nhật**: 20/1/2026  
+**Project**: SP25SE107 - CollabSphere Platform  
+**Team**: 4Bees
 
 ---
 
-## A. BẮT ĐẦU TẠI ĐÂY
+## 🎯 QUICK START - BẮT ĐẦU TẠI ĐÂY
 
-| 🎯 Mục đích | 📄 File | 📂 Đường dẫn |
-|------------|---------|-------------|
-| **Tổng quan toàn bộ** | DOCUMENT_FLOW_OVERVIEW.md | `/` |
-| **Index này** | INDEX.md | `/` |
-| **Hướng dẫn cấu trúc** | README.md | `/` |
-| **Chạy project** | HUONG_DAN_CHAY_PROJECT.md | `/00-ProjectInfo/Guides/` |
-| **Todo list** | NOTES-TODO.md | `/Documentation/` |
+### 🚀 Muốn chạy project ngay?
+➡️ **[Quick Start Docker Guide](guides/deployment/QUICK_START_DOCKER.md)** (5 phút)
 
----
+### 📖 Muốn hiểu toàn bộ project?
+➡️ **[README.md](README.md)** - Tổng quan chi tiết
 
-## B. TÌM THEO SECTION (Tài liệu chính thức)
-
-### Section 0: Front Matter (10 trang)
-📄 **00-FrontMatter.md** → `/Documentation/`
-- Trang bìa
-- Danh sách thành viên
-- Mục lục
-- Definitions & Acronyms
+### 📝 Muốn xem công việc cần làm?
+➡️ **[Documentation/NOTES-TODO.md](Documentation/NOTES-TODO.md)** - Todo list & priorities
 
 ---
 
-### Section I: Project Introduction (35 trang)
-📄 **01-ProjectIntroduction.md** → `/Documentation/`
+## 📂 CẤU TRÚC PROJECT (Navigation)
 
-**Nội dung chính**:
-- 1.1 Overview
-- 1.2 Product Background
-- 1.3 Existing Systems
-- 1.4 Business Opportunity
-- 1.5 Software Product Vision
-- 1.6 **Project Scope** (72 features FE-01 đến FE-72)
-- 1.7 **Limitations** (16 items LI-01 đến LI-16)
+### 1️⃣ SOURCE CODE - Mã nguồn chính
 
-**Tìm nhanh**:
-- 72 Features → Section 1.6, bảng phân theo role
-- Limitations → Section 1.7
-
----
-
-### Section II: Project Management Plan (25 trang)
-📄 **02-ProjectManagementPlan.md** → `/Documentation/`
-
-**Nội dung chính**:
-- 2.1 Overview (WBS, Effort estimation)
-- 2.2 Management Approach
-- 2.3 Project Deliverables
-- 2.4 **RACI Matrix** (Responsibility assignments)
-- 2.5 Project Communications
-- 2.6 Configuration Management
-
----
-
-### Section III: SRS - Software Requirements (65 trang)
-📂 **03-SRS/** → `/Documentation/03-SRS/`
-
-| File | Nội dung | Trang |
-|------|----------|-------|
-| **3.1-ProductOverview.md** | System context, User roles | 12 |
-| **3.2-UserRequirements.md** | **42 Use Cases** (UC001-UC042) | 15 |
-| **3.3-FunctionalRequirements.md** | **72 Functional Requirements** | 20 |
-| **3.4-NonFunctionalRequirements.md** | **22 NFRs** (Performance, Security...) | 10 |
-| **3.5-RequirementAppendix.md** | Business rules, Glossary | 8 |
-
-**Tìm nhanh**:
-- Use Cases → `3.2-UserRequirements.md`
-- Features chi tiết → `3.3-FunctionalRequirements.md`
-- Performance/Security → `3.4-NonFunctionalRequirements.md`
-
----
-
-### Section IV: SDD - Software Design (85 trang)
-📂 **04-SDD/** → `/Documentation/04-SDD/`
-
-| File | Nội dung | Trang |
-|------|----------|-------|
-| **4.1-SystemDesign.md** | 3-tier architecture, Tech stack | 20 |
-| **4.2-DatabaseDesign.md** | **28 Database tables** | 25 |
-| **4.3-DetailedDesign.md** | **60+ API endpoints**, Class/Sequence diagrams | 40 |
-
-**Support files**:
-- **README.md** - Status dashboard
-- **REVIEW_CHECKLIST_AND_GUIDE.md** - Checklist hoàn thành
-- **QUICK_START_GUIDE.md** - Quick start with PlantUML
-- **DIAGRAM_INSERT_TEMPLATE.md** - Templates chèn diagram
-
-**Diagrams** (48 total):
-- **guides/** - 9 hướng dẫn vẽ Draw.io ✅
-- **.png files** - 48 diagrams cần vẽ ⏳
-
-**Tìm nhanh**:
-- Architecture → `4.1-SystemDesign.md` Section 4.1.1
-- Database tables → `4.2-DatabaseDesign.md` Section 4.2.2
-- API endpoints → `4.3-DetailedDesign.md` Section 4.3.1
-- Hướng dẫn vẽ → `diagrams/guides/`
-
----
-
-### Section V: Testing (25 trang) ❌ Chưa tạo
-📄 **05-Testing.md** → `/Documentation/`
-
-**Nội dung dự kiến**:
-- 5.1 Scope of Testing
-- 5.2 Test Strategy
-- 5.3 Test Plan
-- 5.4 Test Cases
-- 5.5 Test Reports
-
----
-
-### Section VI: User Guides (35 trang) ❌ Chưa tạo
-📄 **06-UserGuides.md** → `/Documentation/`
-
-**Nội dung dự kiến**:
-- 6.1 Deliverable Package
-- 6.2 Installation Guides
-- 6.3 User Manual (5 roles)
-
----
-
-## C. TÌM THEO LOẠI NỘI DUNG
-
-### 📋 Requirements & Features
-
-| Nội dung | File | Location |
-|----------|------|----------|
-| **72 Features tổng hợp** | 01-ProjectIntroduction.md | Section 1.6 |
-| **72 Features chi tiết** | 3.3-FunctionalRequirements.md | `/Documentation/03-SRS/` |
-| **42 Use Cases** | 3.2-UserRequirements.md | `/Documentation/03-SRS/` |
-| **22 NFRs** | 3.4-NonFunctionalRequirements.md | `/Documentation/03-SRS/` |
-| **16 Limitations** | 01-ProjectIntroduction.md | Section 1.7 |
-| **Business Rules** | 3.5-RequirementAppendix.md | `/Documentation/03-SRS/` |
-
----
-
-### 🏗️ Design & Architecture
-
-| Nội dung | File | Location |
-|----------|------|----------|
-| **System Architecture** | 4.1-SystemDesign.md | `/Documentation/04-SDD/` |
-| **3-tier Architecture** | 4.1-SystemDesign.md | Section 4.1.1 |
-| **Tech Stack** | 4.1-SystemDesign.md | Section 4.1.2 |
-| **28 Database Tables** | 4.2-DatabaseDesign.md | `/Documentation/04-SDD/` |
-| **ERD Description** | 4.2-DatabaseDesign.md | Section 4.2.2 |
-| **60+ API Endpoints** | 4.3-DetailedDesign.md | `/Documentation/04-SDD/` |
-| **Class Diagrams** | 4.3-DetailedDesign.md | Section 4.3.2 |
-| **Sequence Diagrams** | 4.3-DetailedDesign.md | Section 4.3.3 |
-
----
-
-### 🔐 Security & Permissions
-
-| Nội dung | File | Location |
-|----------|------|----------|
-| **Security Design** | 4.1-SystemDesign.md | Section 4.1.4 |
-| **Authentication** | 4.3-DetailedDesign.md | Section 4.3.1 |
-| **Permissions Matrix** | ROLES_AND_PERMISSIONS.md | `/Documentation/` |
-| **5 User Roles** | 3.1-ProductOverview.md | `/Documentation/03-SRS/` |
-| **Security NFRs** | 3.4-NonFunctionalRequirements.md | NFR-08 đến NFR-12 |
-
----
-
-### 📊 Implementation Tracking
-
-| Nội dung | File | Location |
-|----------|------|----------|
-| **UC → Code Mapping** | USE_CASE_IMPLEMENTATION_MAP.md | `/Documentation/` |
-| **Progress Phase 1-4** | IMPLEMENTATION_PROGRESS.md | `/Documentation/` |
-| **Daily Summary** | IMPLEMENTATION_SUMMARY_JAN3.md | `/Documentation/` |
-| **Action Plan** | ACTION_PLAN.md | `/Documentation/` |
-| **Todo List** | NOTES-TODO.md | `/Documentation/` |
-| **Database Verification** | Database_Verification.txt | `/Documentation/` |
-
----
-
-### 🎨 Diagrams & Visual
-
-| Nội dung | File | Location |
-|----------|------|----------|
-| **Architecture Diagram Guide** | 01-SYSTEM-ARCHITECTURE-GUIDE.md | `/Documentation/04-SDD/diagrams/guides/` |
-| **ERD Guide** | 02-DATABASE-ERD-GUIDE.md | `/Documentation/04-SDD/diagrams/guides/` |
-| **6 Class Diagram Guides** | 03-CLASS-*-GUIDE.md | `/Documentation/04-SDD/diagrams/guides/` |
-| **PlantUML ERD Source** | ERD_DATABASE_DESIGN_COLLABSPHERE.md | `/Documentation/diagrams/plantuml-sources/` |
-| **PlantUML Code** | @startuml.txt | `/Documentation/diagrams/plantuml-sources/` |
-
----
-
-## D. TÌM THEO ROLE
-
-### 👨‍💼 Admin (7 features)
-**Features**: FE-01 đến FE-07
-📄 File: `01-ProjectIntroduction.md` Section 1.6.1
-
-**Chức năng chính**:
-- Login/Logout (FE-01, FE-02)
-- User Management (FE-03, FE-04, FE-05)
-- View reports (FE-06, FE-07)
-
-**Permissions**: `ROLES_AND_PERMISSIONS.md` Section 2.1
-
----
-
-### 👨‍🏫 Department Head (9 features)
-**Features**: FE-08 đến FE-16
-📄 File: `01-ProjectIntroduction.md` Section 1.6.2
-
-**Chức năng chính**:
-- Approve/Reject Projects (FE-08, FE-09)
-- Assign Projects to Classes (FE-10)
-- View Reports (FE-11 đến FE-16)
-
-**Permissions**: `ROLES_AND_PERMISSIONS.md` Section 2.2
-
----
-
-### 👥 Academic Staff (8 features)
-**Features**: FE-17 đến FE-24
-📄 File: `01-ProjectIntroduction.md` Section 1.6.3
-
-**Chức năng chính**:
-- Subject Management (FE-17, FE-18)
-- Class Management (FE-19 đến FE-22)
-- Student Management (FE-23, FE-24)
-
-**Permissions**: `ROLES_AND_PERMISSIONS.md` Section 2.3
-
----
-
-### 👨‍🏫 Lecturer (24 features)
-**Features**: FE-25 đến FE-48
-📄 File: `01-ProjectIntroduction.md` Section 1.6.4
-
-**Chức năng chính**:
-- Project Creation & Management (FE-25 đến FE-29)
-- Group Management (FE-30 đến FE-34)
-- Evaluation (FE-35 đến FE-40)
-- Collaboration (FE-41 đến FE-48)
-
-**Permissions**: `ROLES_AND_PERMISSIONS.md` Section 2.4
-
----
-
-### 👨‍🎓 Student (24 features)
-**Features**: FE-49 đến FE-72
-📄 File: `01-ProjectIntroduction.md` Section 1.6.5
-
-**Chức năng chính**:
-- Project Selection (FE-49, FE-50)
-- Group Formation (FE-51 đến FE-54)
-- Task Management (FE-55 đến FE-58)
-- Collaboration (FE-59 đến FE-66)
-- Peer Review (FE-67 đến FE-72)
-
-**Permissions**: `ROLES_AND_PERMISSIONS.md` Section 2.5
-
----
-
-## E. TÌM CODE
-
-### 📂 Backend Structure
-**Location**: `/collabsphere/backend/app/`
-
-| Component | Folder | Nội dung |
-|-----------|--------|----------|
-| **Models** | `models/` | 28 database models (SQLAlchemy) |
-| **API Routers** | `routers/` | 13 router files với 60+ endpoints |
-| **Schemas** | `schemas/` | Pydantic validation schemas |
-| **Services** | `services/` | Business logic (AI, Socket, Notification) |
-| **Utils** | `utils/` | Security, dependencies, helpers |
-
-**Key files**:
-- `main.py` - FastAPI app entry point
-- `database.py` - Database connection
-- `config.py` - Configuration settings
-
----
-
-### 📂 Frontend Structure
-**Location**: `/collabsphere/frontend/src/`
-
-| Component | Folder | Nội dung |
-|-----------|--------|----------|
-| **Components** | `components/` | React components (Auth, Group, etc.) |
-| **Pages** | `pages/` | Page components |
-| **Services** | `services/` | API call functions |
-| **Context** | `context/` | React Context (Auth, Socket) |
-| **Styles** | `styles/` | CSS/styling |
-
----
-
-### 🔍 Tìm Code của Use Case
-📄 **USE_CASE_IMPLEMENTATION_MAP.md** → `/Documentation/`
-
-**Format**: Mỗi UC có:
-- Status (✅ Complete / 🟡 Partial / ❌ Missing)
-- Backend files với line numbers
-- Frontend files với line numbers
-- API endpoints related
-- Notes & dependencies
-
-**Example**:
 ```
-UC001: User Login
-✅ Status: Complete
-Backend: app/routers/auth.py (lines 15-45)
-Frontend: src/pages/LoginPage.js (lines 20-80)
-Endpoints: POST /auth/login
+📁 collabsphere/
+├── 🔙 backend/              FastAPI + PostgreSQL
+│   ├── app/
+│   │   ├── models/         28 database models
+│   │   ├── routers/        60+ API endpoints
+│   │   ├── schemas/        Pydantic schemas
+│   │   ├── services/       Business logic
+│   │   └── utils/          Helper functions
+│   └── alembic/            Database migrations
+│
+├── 💻 frontend/            React.js
+│   └── src/
+│       ├── components/     UI components
+│       ├── pages/          Page views (5 roles)
+│       ├── services/       API services
+│       └── context/        State management
+│
+└── 🐳 docker-compose.yml   Docker configuration
+```
+
+**Links**:
+- [Backend README](collabsphere/backend/README.md)
+- [Frontend README](collabsphere/frontend/README.md)
+- [Main README](collabsphere/README.md)
+
+---
+
+### 2️⃣ DOCUMENTATION - Tài liệu chính thức (Nộp)
+
+```
+📁 Documentation/
+├── 📄 00-FrontMatter.md              ✅ Bìa, mục lục (10 trang)
+├── 📄 01-ProjectIntroduction.md       ✅ Section I (35 trang)
+├── 📄 02-ProjectManagementPlan.md     ✅ Section II (25 trang)
+│
+├── 📁 03-SRS/                         ✅ Section III (65 trang)
+│   ├── 3.1-ProductOverview.md
+│   ├── 3.2-UserRequirements.md       42 Use Cases
+│   ├── 3.3-FunctionalRequirements.md  72 Features
+│   ├── 3.4-NonFunctionalRequirements.md
+│   └── 3.5-RequirementAppendix.md
+│
+├── 📁 04-SDD/                         🟡 Section IV (85 trang, 60%)
+│   ├── 4.1-SystemDesign.md           ✅ Architecture
+│   ├── 4.2-DatabaseDesign.md         ✅ 28 Tables
+│   ├── 4.3-DetailedDesign.md         ✅ APIs, Classes
+│   └── diagrams/                     🟡 48 diagrams cần vẽ
+│       ├── guides/                   9 hướng dẫn PlantUML
+│       └── diagram-viewer.html       HTML viewer
+│
+└── 📁 diagrams/                       Use Case diagrams
+    ├── 01-USE-CASE-GUIDE.md
+    ├── 01-USE-CASE-PLANTUML.md       PlantUML code
+    ├── 02-CLASS-GUIDE.md
+    ├── 03-SEQUENCE-GUIDE.md
+    └── 04-ARCHITECTURE-GUIDE.md
+```
+
+**Quick Links**:
+- [Documentation README](Documentation/README.md)
+- [04-SDD Dashboard](Documentation/04-SDD/README.md)
+- [Diagram Viewer](Documentation/diagrams/diagram-viewer.html)
+
+**Tiến độ**: 170/280 trang (60%)
+
+---
+
+### 3️⃣ GUIDES - Hướng dẫn sử dụng
+
+```
+📁 guides/
+├── 📁 deployment/                 Deployment guides
+│   ├── QUICK_START_DOCKER.md     🚀 Chạy nhanh (5 phút)
+│   ├── HUONG_DAN_CHAY_DOCKER_TESTED.md
+│   ├── HUONG_DAN_CHAY_HE_THONG.md
+│   └── TINH_NANG_CAI_DAT_SETTINGS.md
+│
+└── 📁 setup/                      Setup guides
+    └── (đang cập nhật)
+```
+
+**Hướng dẫn chính**:
+1. [Quick Start Docker](guides/deployment/QUICK_START_DOCKER.md) ⭐
+2. [Hướng dẫn chi tiết](00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md)
+
+---
+
+### 4️⃣ SCRIPTS - Tự động hóa
+
+```
+📁 scripts/
+├── 📁 deployment/                 Git & deployment
+│   ├── push-to-github.ps1        Push lên GitHub
+│   └── git-push-simple.cmd       Git push đơn giản
+│
+└── 📁 docker/                     Docker automation
+    ├── setup-first-time.ps1      Setup lần đầu
+    ├── start-docker.ps1          Khởi động containers
+    ├── stop-docker.ps1           Dừng containers
+    ├── start-hybrid.ps1          Hybrid mode
+    ├── stop-hybrid.ps1           Dừng hybrid
+    └── start-manual.ps1          Manual mode
+```
+
+**Cách dùng**:
+```powershell
+# Setup lần đầu
+.\scripts\docker\setup-first-time.ps1
+
+# Khởi động
+.\scripts\docker\start-docker.ps1
+
+# Push lên GitHub
+.\scripts\deployment\push-to-github.ps1
 ```
 
 ---
 
-### 📋 API Endpoints Mapping
+### 5️⃣ KẾ HOẠCH TRIỂN KHAI - Implementation Plan
 
-**Backend Implementation**: `03-APIBackend.md` → `/KeHoach/`
+```
+📁 KeHoach/                        9 files tiếng Việt
+├── 00-TongQuan.md                Kiến trúc 3-tier
+├── 01-PhanTichThietKe.md         Phân tích & thiết kế
+├── 02-ThietLapBackend.md         Setup backend
+├── 03-APIBackend.md              60+ API endpoints
+├── 04-AIRealtime.md              AI & Real-time
+├── 05-FrontendReact.md           Setup frontend
+├── 06-CongCuCongTac.md           Tools & workflow
+├── 07-Testing.md                 Testing strategy
+├── 08-Deployment.md              Production deployment
+└── 09-CauHoiCanXemXet.md         Q&A
+```
 
-**Categories**:
-1. Authentication (5 endpoints)
-2. User Management (8 endpoints)
-3. Academic (12 endpoints)
-4. Projects (10 endpoints)
-5. Groups (15 endpoints)
-6. Collaboration (10+ endpoints)
-
-**Design Documentation**: `4.3-DetailedDesign.md` → `/Documentation/04-SDD/`
-
----
-
-## F. TÌM DIAGRAM
-
-### 📐 Diagram Guides (Hướng dẫn vẽ)
-**Location**: `/Documentation/04-SDD/diagrams/guides/`
-
-| Guide | File | Thời gian |
-|-------|------|-----------|
-| **System Architecture** | 01-SYSTEM-ARCHITECTURE-GUIDE.md | 2h |
-| **Database ERD** | 02-DATABASE-ERD-GUIDE.md | 4h |
-| **User Module** | 03-CLASS-USER-MODULE-GUIDE.md | 45m |
-| **Academic Module** | 03-CLASS-ACADEMIC-MODULE-GUIDE.md | 1h |
-| **Project Module** | 03-CLASS-PROJECT-MODULE-GUIDE.md | 1h |
-| **Group Module** | 03-CLASS-GROUP-MODULE-GUIDE.md | 1.5h |
-| **Collaboration Module** | 03-CLASS-COLLABORATION-MODULE-GUIDE.md | 1h |
-| **Evaluation Module** | 03-CLASS-EVALUATION-MODULE-GUIDE.md | 1.5h |
-
-**Tổng**: 13.5 giờ để vẽ tất cả
+**Đọc theo thứ tự**: 00 → 09
 
 ---
 
-### 🖼️ Diagram Files (PNG - Cần vẽ)
-**Location**: `/Documentation/04-SDD/diagrams/`
+### 6️⃣ TRACKING & METADATA - Progress tracking
 
-**48 diagrams cần tạo**:
-- 1 × Architecture (`4.1-system-architecture.png`)
-- 1 × ERD (`4.2-erd-full.png`)
-- 6 × Class Diagrams (`4.3.1` đến `4.3.6-class-*.png`)
-- 10 × Sequence Diagrams (`4.3.7` đến `4.3.16-seq-*.png`)
-- 30 × GUI Screenshots (`4.3.17` đến `4.3.46-gui-*.png`)
+```
+📁 docs/metadata/                  Project metadata
+├── DOCUMENT_FLOW_OVERVIEW.md     Tổng quan tài liệu
+├── PROJECT_STRUCTURE.md          Cấu trúc project
+├── DIAGRAM_IMPLEMENTATION_STATUS.md
+├── DIAGRAM_MAPPING_GUIDE.md
+├── IMAGE_AUDIT_COMPLETE_REPORT.md
+└── PROJECT_STRUCTURE_TREE.txt
 
----
-
-### 📊 PlantUML Source Code
-**Location**: `/Documentation/diagrams/plantuml-sources/`
-
-| File | Nội dung | Dòng |
-|------|----------|------|
-| **ERD_DATABASE_DESIGN_COLLABSPHERE.md** | ERD PlantUML code | 911 |
-| **@startuml.txt** | PlantUML code tổng hợp | ~200 |
-
-**Sử dụng**: Copy code này vào PlantUML editor để generate diagram tự động
+📁 Documentation/                  Progress reports
+├── ROLES_AND_PERMISSIONS.md      5 roles, permissions
+├── USE_CASE_IMPLEMENTATION_MAP.md 42 UC → code
+├── IMPLEMENTATION_PROGRESS.md    Phase 1-4 progress
+├── ACTION_PLAN.md               Action plan
+├── EVALUATION_REPORT.md         Báo cáo đánh giá
+└── NOTES-TODO.md                Todo list ⭐
+```
 
 ---
 
-## 🎯 SCENARIOS TÌM KIẾM THƯỜNG GẶP
+### 7️⃣ THÔNG TIN DỰ ÁN - Project Info
 
-### "Tôi muốn biết feature X thuộc role nào?"
-→ `01-ProjectIntroduction.md` Section 1.6 → Tìm FE-XX
-
-### "Tôi muốn biết Use Case Y implement ở đâu?"
-→ `USE_CASE_IMPLEMENTATION_MAP.md` → Tìm UCYYY
-
-### "Tôi muốn biết database table Z có gì?"
-→ `4.2-DatabaseDesign.md` Section 4.2.2 → Tìm table name
-
-### "Tôi muốn vẽ diagram loại A?"
-→ `04-SDD/diagrams/guides/` → Chọn guide phù hợp
-
-### "Tôi muốn biết API endpoint B?"
-→ `4.3-DetailedDesign.md` Section 4.3.1 → Tìm category
-
-### "Tôi muốn biết role C có permission gì?"
-→ `ROLES_AND_PERMISSIONS.md` → Tìm Section 2.X
-
-### "Tôi muốn biết còn phải làm gì?"
-→ `NOTES-TODO.md` hoặc `IMPLEMENTATION_PROGRESS.md`
-
-### "Tôi muốn setup project?"
-→ `00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md`
+```
+📁 00-ProjectInfo/
+├── DeBai.md                      Đề bài project
+├── 📁 Guides/
+│   ├── HUONG_DAN_CHAY_PROJECT.md Setup chi tiết
+│   └── Huongdan.md
+└── 📁 Templates/
+    └── Template.md               Template tài liệu
+```
 
 ---
 
-## 📞 LIÊN HỆ
+### 8️⃣ IMAGES - Diagrams & Screenshots
 
-**Team**: 4Bees  
-**Project**: CollabSphere (SP25SE107)  
-**Semester**: Spring 2025
+```
+📁 Images/                        Hình ảnh diagrams
+├── UseCaseDiagramVer3.drawio.png
+├── Conceptual Model Project-Based Learning Management System.png
+├── Production Deployment Architecture - CollabShere.png
+├── Role - Based Access Control (RBAC) Hierarchy - CollabShere.png
+├── Module1_Users&Authentication.png
+├── Module2_AcademicManagement.png
+├── Module3_Project&GroupManagement.png
+├── CollaborationTools.png
+└── Evaluation&Assessment.png
+```
 
 ---
 
-**Cập nhật**: 4/1/2026  
-**Version**: 1.0
+## 🎯 WORKFLOWS - Quy trình làm việc
+
+### 🔄 Workflow 1: Phát triển tính năng mới
+
+1. **Đọc requirements**: [03-SRS/3.2-UserRequirements.md](Documentation/03-SRS/3.2-UserRequirements.md)
+2. **Xem design**: [04-SDD/](Documentation/04-SDD/)
+3. **Implement code**: `collabsphere/backend/` hoặc `frontend/`
+4. **Test**: `pytest` hoặc manual testing
+5. **Update docs**: Cập nhật [IMPLEMENTATION_PROGRESS.md](Documentation/IMPLEMENTATION_PROGRESS.md)
+6. **Push**: `.\scripts\deployment\push-to-github.ps1`
+
+### 📊 Workflow 2: Vẽ diagrams
+
+1. **Đọc hướng dẫn**: [04-SDD/diagrams/guides/](Documentation/04-SDD/diagrams/guides/)
+2. **Xem PlantUML**: [01-USE-CASE-PLANTUML.md](Documentation/diagrams/01-USE-CASE-PLANTUML.md)
+3. **Render**: [diagram-viewer.html](Documentation/diagrams/diagram-viewer.html)
+4. **Export**: PNG/SVG từ PlantUML
+5. **Insert**: Thêm vào markdown files
+
+### 🚀 Workflow 3: Deploy
+
+1. **Local test**: `.\scripts\docker\start-docker.ps1`
+2. **Check logs**: `docker-compose logs -f`
+3. **Test features**: http://localhost:3000
+4. **Deploy production**: Xem [08-Deployment.md](KeHoach/08-Deployment.md)
+
+---
+
+## 📊 PROGRESS OVERVIEW - Tiến độ dự án
+
+### ✅ Hoàn thành (100%)
+- ✅ Backend API: 60+ endpoints
+- ✅ Frontend UI: 5 roles interface
+- ✅ Database: 28 tables
+- ✅ Documentation: Section I, II, III (135 trang)
+- ✅ Docker setup & scripts
+- ✅ Project reorganization (20/1/2026)
+
+### 🟡 Đang làm (60%)
+- 🟡 Section IV - SDD: 85 trang (cần vẽ 48 diagrams)
+- 🟡 Real-time features: Chat, Video call
+- 🟡 AI integration: Chatbot, analysis
+
+### ❌ Chưa làm
+- ❌ Section V - Testing (25 trang)
+- ❌ Section VI - User Guides (35 trang)
+- ❌ E2E testing
+- ❌ Production deployment
+
+**Tổng tiến độ**: ~65%
+
+---
+
+## 🔗 QUICK LINKS - Liên kết nhanh
+
+### 📖 Documentation
+- [README.md](README.md) - Project overview
+- [Documentation/README.md](Documentation/README.md) - Docs index
+- [NOTES-TODO.md](Documentation/NOTES-TODO.md) - Todo list
+
+### 🚀 Deployment
+- [Quick Start](guides/deployment/QUICK_START_DOCKER.md)
+- [Docker Guide](guides/deployment/HUONG_DAN_CHAY_DOCKER_TESTED.md)
+- [Full Guide](00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md)
+
+### 📐 Diagrams
+- [Diagram Viewer](Documentation/diagrams/diagram-viewer.html)
+- [PlantUML Guides](Documentation/04-SDD/diagrams/guides/)
+- [Use Case Guide](Documentation/diagrams/01-USE-CASE-GUIDE.md)
+
+### 💻 Code
+- [Backend](collabsphere/backend/)
+- [Frontend](collabsphere/frontend/)
+- [Docker Compose](collabsphere/docker-compose.yml)
+
+### 📊 Progress
+- [Implementation Progress](Documentation/IMPLEMENTATION_PROGRESS.md)
+- [Use Case Map](Documentation/USE_CASE_IMPLEMENTATION_MAP.md)
+- [Action Plan](Documentation/ACTION_PLAN.md)
+
+---
+
+## 🎓 DÀNH CHO TEAM MEMBERS
+
+### 👨‍💻 Developer
+1. Setup: [HUONG_DAN_CHAY_PROJECT.md](00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md)
+2. Backend: [02-ThietLapBackend.md](KeHoach/02-ThietLapBackend.md)
+3. Frontend: [05-FrontendReact.md](KeHoach/05-FrontendReact.md)
+4. API Docs: [03-APIBackend.md](KeHoach/03-APIBackend.md)
+
+### 📝 Documentation Writer
+1. Structure: [DOCUMENT_FLOW_OVERVIEW.md](docs/metadata/DOCUMENT_FLOW_OVERVIEW.md)
+2. Templates: [00-ProjectInfo/Templates/](00-ProjectInfo/Templates/)
+3. Progress: [IMPLEMENTATION_PROGRESS.md](Documentation/IMPLEMENTATION_PROGRESS.md)
+
+### 🎨 Diagram Designer
+1. Guides: [Documentation/diagrams/](Documentation/diagrams/)
+2. PlantUML: [04-SDD/diagrams/guides/](Documentation/04-SDD/diagrams/guides/)
+3. Viewer: [diagram-viewer.html](Documentation/diagrams/diagram-viewer.html)
+
+### 🧪 Tester
+1. Testing Plan: [07-Testing.md](KeHoach/07-Testing.md)
+2. Test Cases: (Đang cập nhật)
+
+---
+
+## 📞 HỖ TRỢ
+
+### ❓ Gặp vấn đề?
+1. Xem [09-CauHoiCanXemXet.md](KeHoach/09-CauHoiCanXemXet.md)
+2. Check [NOTES-TODO.md](Documentation/NOTES-TODO.md)
+3. Hỏi team trên Discord/Slack
+
+### 🐛 Bug hoặc Issue?
+1. Check logs: `docker-compose logs`
+2. Tạo issue trên GitHub
+3. Document trong [NOTES-TODO.md](Documentation/NOTES-TODO.md)
+
+---
+
+## 🎯 PRIORITIES - Ưu tiên công việc
+
+### 🔥 Cao (High Priority)
+1. ✅ ~~Tổ chức lại cấu trúc project~~ (Hoàn thành 20/1/2026)
+2. 🎨 Vẽ 48 diagrams cho Section IV (13.5 giờ)
+3. 📝 Hoàn thành Section IV - SDD (40% còn lại)
+
+### 🟡 Trung bình (Medium)
+4. ✍️ Viết Section V - Testing (25 trang)
+5. 📖 Viết Section VI - User Guides (35 trang)
+6. 🤖 Hoàn thiện AI integration
+
+### 🔵 Thấp (Low)
+7. 🧪 E2E testing
+8. 🚀 Production deployment
+9. 📊 Performance optimization
+
+---
+
+**Cập nhật lần cuối**: 20/1/2026  
+**Người cập nhật**: AI Assistant + Team 4Bees
+
+📌 **Lưu ý**: File này được tự động cập nhật. Bookmark file này để navigation nhanh!

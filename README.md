@@ -3,22 +3,80 @@
 **Mã dự án**: SP25SE107  
 **Học kỳ**: Spring 2025  
 **Team**: 4Bees  
-**Cập nhật**: 4/1/2026
+**Cập nhật**: 20/1/2026
 
 ---
 
-## 📂 CẤU TRÚC PROJECT (ĐƯỜNG DẪN NHANH)
+## 📂 CẤU TRÚC PROJECT (ĐÃ TỔ CHỨC LẠI)
 
 ### 🎯 1. BẮT ĐẦU TẠI ĐÂY
 | Mục đích | File | Mô tả |
 |----------|------|-------|
-| 📘 **Tổng quan toàn bộ tài liệu** | **[DOCUMENT_FLOW_OVERVIEW.md](DOCUMENT_FLOW_OVERVIEW.md)** | ⭐ **ĐỌC ĐẦU TIÊN** - Flow, cấu trúc, tiến độ |
-| 🏃 **Chạy project** | [00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md](00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md) | Hướng dẫn setup & run |
-| 📋 **Xem công việc còn lại** | [Documentation/NOTES-TODO.md](Documentation/NOTES-TODO.md) | Todo list & priorities |
+| 📘 **Tổng quan project** | **[INDEX.md](INDEX.md)** | ⭐ **ĐỌC ĐẦU TIÊN** - Navigation & roadmap |
+| 🚀 **Quick Start Docker** | [guides/deployment/QUICK_START_DOCKER.md](guides/deployment/QUICK_START_DOCKER.md) | Hướng dẫn chạy nhanh với Docker |
+| 📖 **Hướng dẫn chi tiết** | [00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md](00-ProjectInfo/Guides/HUONG_DAN_CHAY_PROJECT.md) | Setup & run đầy đủ |
+| 📋 **Todo & Progress** | [Documentation/NOTES-TODO.md](Documentation/NOTES-TODO.md) | Công việc còn lại |
+
+### 📁 2. CẤU TRÚC THƯ MỤC MỚI
+
+```
+SE/
+├── 📁 collabsphere/          # Source code chính
+│   ├── backend/              # FastAPI backend
+│   ├── frontend/             # React frontend
+│   └── docker-compose.yml    # Docker configuration
+│
+├── 📁 Documentation/         # Tài liệu chính thức (nộp đồ án)
+│   ├── 00-FrontMatter.md
+│   ├── 01-ProjectIntroduction.md
+│   ├── 02-ProjectManagementPlan.md
+│   ├── 03-SRS/              # Requirements (5 files)
+│   ├── 04-SDD/              # Design (3 files + diagrams)
+│   └── diagrams/            # UML diagrams & guides
+│
+├── 📁 guides/               # 🆕 Hướng dẫn sử dụng
+│   ├── deployment/          # Deployment guides
+│   │   ├── QUICK_START_DOCKER.md
+│   │   ├── HUONG_DAN_CHAY_DOCKER_TESTED.md
+│   │   ├── HUONG_DAN_CHAY_HE_THONG.md
+│   │   └── TINH_NANG_CAI_DAT_SETTINGS.md
+│   └── setup/               # Setup guides
+│
+├── 📁 scripts/              # 🆕 Scripts tự động hóa
+│   ├── deployment/          # Git, deployment scripts
+│   │   ├── push-to-github.ps1
+│   │   └── git-push-simple.cmd
+│   └── docker/              # Docker scripts
+│       ├── setup-first-time.ps1
+│       ├── start-docker.ps1
+│       ├── stop-docker.ps1
+│       ├── start-hybrid.ps1
+│       └── stop-hybrid.ps1
+│
+├── 📁 docs/                 # 🆕 Documentation metadata
+│   └── metadata/            # Project structure & audits
+│       ├── DIAGRAM_IMPLEMENTATION_STATUS.md
+│       ├── DIAGRAM_MAPPING_GUIDE.md
+│       ├── DOCUMENT_FLOW_OVERVIEW.md
+│       ├── FOLDER_REORGANIZATION_GUIDE.md
+│       ├── IMAGE_AUDIT_COMPLETE_REPORT.md
+│       ├── PROJECT_STRUCTURE.md
+│       └── PROJECT_STRUCTURE_TREE.txt
+│
+├── 📁 00-ProjectInfo/       # Thông tin dự án
+│   ├── DeBai.md
+│   ├── Guides/
+│   └── Templates/
+│
+├── 📁 KeHoach/              # Kế hoạch triển khai (9 files)
+├── 📁 Doc/                  # Tài liệu khác
+├── 📁 Images/               # Hình ảnh diagrams
+└── 📁 .archived/            # 🆕 File cũ đã lưu trữ
+```
 
 ---
 
-### 📁 2. TÀI LIỆU CHÍNH THỨC (Nộp đồ án)
+### 📁 3. TÀI LIỆU CHÍNH THỨC (Nộp đồ án)
 
 **Thư mục**: [`Documentation/`](Documentation/)
 
@@ -52,7 +110,36 @@
 
 ---
 
-### 📚 3. HƯỚNG DẪN KỸ THUẬT (Implementation)
+### 📚 4. HƯỚNG DẪN DEPLOYMENT & SCRIPTS
+
+#### 🚀 Deployment Guides
+**Thư mục**: [`guides/deployment/`](guides/deployment/)
+
+| File | Mô tả |
+|------|-------|
+| [QUICK_START_DOCKER.md](guides/deployment/QUICK_START_DOCKER.md) | Quick start với Docker (5 phút) |
+| [HUONG_DAN_CHAY_DOCKER_TESTED.md](guides/deployment/HUONG_DAN_CHAY_DOCKER_TESTED.md) | Hướng dẫn Docker chi tiết (đã test) |
+| [HUONG_DAN_CHAY_HE_THONG.md](guides/deployment/HUONG_DAN_CHAY_HE_THONG.md) | Hướng dẫn chạy hệ thống đầy đủ |
+| [TINH_NANG_CAI_DAT_SETTINGS.md](guides/deployment/TINH_NANG_CAI_DAT_SETTINGS.md) | Tính năng cài đặt settings |
+
+#### ⚙️ Scripts Tự động hóa
+**Thư mục**: [`scripts/`](scripts/)
+
+**Deployment Scripts** (`scripts/deployment/`):
+- `push-to-github.ps1` - Push code lên GitHub
+- `git-push-simple.cmd` - Git push đơn giản
+
+**Docker Scripts** (`scripts/docker/`):
+- `setup-first-time.ps1` - Setup lần đầu
+- `start-docker.ps1` - Khởi động Docker containers
+- `stop-docker.ps1` - Dừng containers
+- `start-hybrid.ps1` - Chạy hybrid mode
+- `stop-hybrid.ps1` - Dừng hybrid mode
+- `start-manual.ps1` - Chạy manual mode
+
+---
+
+### 📖 5. KẾ HOẠCH TRIỂN KHAI (Implementation)
 
 **Thư mục**: [`KeHoach/`](KeHoach/) - **9 files tiếng Việt**
 
@@ -71,24 +158,29 @@
 
 ---
 
-### 🔍 4. TÀI LIỆU TRACKING (Implementation Progress)
+### 🔍 6. TÀI LIỆU TRACKING & METADATA
 
-**Thư mục**: [`Documentation/`](Documentation/)
-
+**Tracking Progress** (`Documentation/`):
 | File | Mục đích | Kích thước |
 |------|----------|-----------|
 | [ROLES_AND_PERMISSIONS.md](Documentation/ROLES_AND_PERMISSIONS.md) | Chi tiết permissions 5 roles | 17 KB |
-| [USE_CASE_IMPLEMENTATION_MAP.md](Documentation/USE_CASE_IMPLEMENTATION_MAP.md) | Map 42 UC → code (file paths, line numbers) | 35 KB |
-| [IMPLEMENTATION_PROGRESS.md](Documentation/IMPLEMENTATION_PROGRESS.md) | Progress Phase 1-4, checklist | 12 KB |
-| [IMPLEMENTATION_SUMMARY_JAN3.md](Documentation/IMPLEMENTATION_SUMMARY_JAN3.md) | Daily summary 3/1/2026 | 10 KB |
+| [USE_CASE_IMPLEMENTATION_MAP.md](Documentation/USE_CASE_IMPLEMENTATION_MAP.md) | Map 42 UC → code | 35 KB |
+| [IMPLEMENTATION_PROGRESS.md](Documentation/IMPLEMENTATION_PROGRESS.md) | Progress Phase 1-4 | 12 KB |
 | [ACTION_PLAN.md](Documentation/ACTION_PLAN.md) | Action plan chi tiết | 12 KB |
 | [EVALUATION_REPORT.md](Documentation/EVALUATION_REPORT.md) | Báo cáo đánh giá | 21 KB |
-| [Database_Verification.txt](Documentation/Database_Verification.txt) | Database verification log | 3 KB |
-| [FILE_LOCATIONS_SUMMARY.md](Documentation/FILE_LOCATIONS_SUMMARY.md) | File locations summary | 9 KB |
+
+**Project Metadata** (`docs/metadata/`):
+| File | Mô tả |
+|------|-------|
+| [DOCUMENT_FLOW_OVERVIEW.md](docs/metadata/DOCUMENT_FLOW_OVERVIEW.md) | Tổng quan flow tài liệu |
+| [PROJECT_STRUCTURE.md](docs/metadata/PROJECT_STRUCTURE.md) | Cấu trúc project |
+| [DIAGRAM_IMPLEMENTATION_STATUS.md](docs/metadata/DIAGRAM_IMPLEMENTATION_STATUS.md) | Trạng thái diagrams |
+| [DIAGRAM_MAPPING_GUIDE.md](docs/metadata/DIAGRAM_MAPPING_GUIDE.md) | Hướng dẫn mapping diagrams |
+| [IMAGE_AUDIT_COMPLETE_REPORT.md](docs/metadata/IMAGE_AUDIT_COMPLETE_REPORT.md) | Báo cáo audit hình ảnh |
 
 ---
 
-### 📐 5. DIAGRAMS & PLANTUML
+### 📐 7. DIAGRAMS & PLANTUML
 
 **Thư mục**: [`Documentation/diagrams/`](Documentation/diagrams/)
 
