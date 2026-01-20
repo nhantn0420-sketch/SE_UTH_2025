@@ -1,0 +1,219 @@
+@startuml 4.2-module5-evaluation
+!define LIGHTYELLOW #FFFDE7
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam nodesep 80
+skinparam ranksep 100
+
+skinparam class {
+  BackgroundColor LIGHTYELLOW
+  BorderColor #F57F17
+  BorderThickness 2
+  ArrowColor #333333
+  FontStyle bold
+}
+
+top to bottom direction
+
+title Module 5: Evaluation & Assessment
+
+class peer_reviews <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> reviewer_id : INTEGER
+  <color:blue>🔗 FK</color> reviewee_id : INTEGER
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  period : VARCHAR(50)
+  rating : INTEGER
+  comments : TEXT
+  criteria : JSON
+  is_anonymous : BOOLEAN
+  created_at : TIMESTAMP
+  --
+  <b>Constraint:</b> rating ∈ [1, 5]
+}
+
+class group_evaluations <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  <color:blue>🔗 FK</color> evaluator_id : INTEGER
+  evaluation_type : VARCHAR(50)
+  score : FLOAT
+  feedback : TEXT
+  criteria : JSON
+  created_at : TIMESTAMP
+  --
+  <b>Constraint:</b> score ∈ [0, 10]
+}
+
+class member_evaluations <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> group_member_id : INTEGER
+  <color:blue>🔗 FK</color> evaluator_id : INTEGER
+  score : FLOAT
+  feedback : TEXT
+  evaluation_type : VARCHAR(50)
+  created_at : TIMESTAMP
+  --
+  <b>Constraint:</b> score ∈ [0, 10]
+}
+
+class checkpoint_evaluations <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> checkpoint_id : INTEGER
+  <color:blue>🔗 FK</color> evaluator_id : INTEGER
+  score : FLOAT
+  feedback : TEXT
+  created_at : TIMESTAMP
+  --
+  <b>Constraint:</b> score ∈ [0, 10]
+}
+
+class milestone_answers <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> question_id : INTEGER
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  <color:blue>🔗 FK</color> user_id : INTEGER
+  answer : TEXT
+  submitted_at : TIMESTAMP
+}
+
+' External references
+class groups_external <<external>> {
+  from Project module
+}
+
+class users_reviewer <<external>> {
+  role = 'STUDENT'
+}
+
+class users_reviewee <<external>> {
+  role = 'STUDENT'
+}
+
+class users_evaluator <<external>> {
+  role = 'LECTURER'
+}
+
+class group_members_external <<external>> {
+  from Project module
+}
+
+class checkpoints_external <<external>> {
+  from Project module
+}
+
+class milestone_questions_external <<external>> {
+  from Project module
+}
+
+' Relationships
+peer_reviews "*" -- "1" users_reviewer : reviewed by >
+peer_reviews "*" -- "1" users_reviewee : reviews >
+peer_reviews "*" -- "1" groups_external : in group >
+
+group_evaluations "*" -- "1" groups_external : evaluates >
+group_evaluations "*" -- "1" users_evaluator : evaluated by >
+
+member_evaluations "*" -- "1" group_members_external : evaluates >
+member_evaluations "*" -- "1" users_evaluator : evaluated by >
+
+checkpoint_evaluations "*" -- "1" checkpoints_external : evaluates >
+checkpoint_evaluations "*" -- "1" users_evaluator : evaluated by >
+
+milestone_answers "*" -- "1" milestone_questions_external : answers >
+milestone_answers "*" -- "1" groups_external : submitted by >
+milestone_answers "*" -- "1" users_reviewer : authored by >
+
+' Layout hints
+peer_reviews -[hidden]down-> group_evaluations
+group_evaluations -[hidden]down-> member_evaluations
+member_evaluations -[hidden]right-> checkpoint_evaluations
+checkpoint_evaluations -[hidden]down-> milestone_answers
+
+' Notes
+note top of peer_reviews
+  **Peer Review System**
+  
+  • Student-to-student evaluation
+  • Period: Midterm/Final/Weekly
+  • Rating scale: 1-5 stars
+  • Optional anonymity
+  • JSON criteria (customizable):
+    {
+      "communication": 4,
+      "contribution": 5,
+      "collaboration": 4
+    }
+end note
+
+note top of group_evaluations
+  **Group Assessment**
+  
+  • Evaluated by Lecturer
+  • Evaluation types:
+    - Progress Review
+    - Final Presentation
+    - Milestone Completion
+  • Score: 0-10 scale
+  • Detailed feedback
+end note
+
+note bottom of member_evaluations
+  **Individual Member Grading**
+  
+  • Lecturer evaluates each student
+  • Based on contribution_score
+  • Combined with peer reviews
+  • Score: 0-10 scale
+  • Affects final grade
+end note
+
+note bottom of checkpoint_evaluations
+  **Checkpoint Grading**
+  
+  • Evaluates specific deliverables
+  • Submission-based assessment
+  • Score: 0-10 scale
+  • Quick feedback loop
+end note
+
+note bottom of milestone_answers
+  **Milestone Questions**
+  
+  • Groups answer predefined questions
+  • Track progress and understanding
+  • Submitted by individual members
+  • Reviewed by lecturer
+  
+  <b>Example questions:</b>
+  • What did you accomplish?
+  • What challenges did you face?
+  • What are next steps?
+end note
+
+legend bottom right
+  <b>Table Legend:</b>
+  <color:gold>🔑</color> Primary Key
+  <color:blue>🔗</color> Foreign Key
+  
+  <b>Evaluation Types:</b>
+  • <b>Peer Reviews:</b> Student → Student
+  • <b>Group Evaluations:</b> Lecturer → Group
+  • <b>Member Evaluations:</b> Lecturer → Student
+  • <b>Checkpoint Evaluations:</b> Lecturer → Deliverable
+  
+  <b>Score Scales:</b>
+  • Peer reviews: 1-5 (stars)
+  • All others: 0-10 (points)
+end legend
+
+@enduml

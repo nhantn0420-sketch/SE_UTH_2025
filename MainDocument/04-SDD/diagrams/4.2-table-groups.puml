@@ -1,0 +1,94 @@
+@startuml 4.2-table-groups
+!define LIGHTBLUE #E3F2FD
+!define LIGHTGREEN #E8F5E9
+!define LIGHTORANGE #FFF3E0
+!define LIGHTPURPLE #F3E5F5
+!define LIGHTYELLOW #FFFDE7
+!define LIGHTGRAY #F5F5F5
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+' Main database package
+package "CollabSphere Database (28 tables)" as DB {
+  
+  ' Group 1: Users & Authentication
+  package "1. Users & Authentication\n(1 table)" as G1 <<folder>> {
+    class users <<table>> LIGHTBLUE
+  }
+  
+  ' Group 2: Academic Management
+  package "2. Academic Management\n(4 tables)" as G2 <<folder>> {
+    class subjects <<table>> LIGHTGREEN
+    class curricula <<table>> LIGHTGREEN
+    class classes <<table>> LIGHTGREEN
+    class class_members <<table>> LIGHTGREEN
+  }
+  
+  ' Group 3: Project & Group
+  package "3. Project & Group\n(9 tables)" as G3 <<folder>> {
+    class projects <<table>> LIGHTORANGE
+    class project_milestones <<table>> LIGHTORANGE
+    class class_projects <<table>> LIGHTORANGE
+    class groups <<table>> LIGHTORANGE
+    class group_members <<table>> LIGHTORANGE
+    class group_milestones <<table>> LIGHTORANGE
+    class checkpoints <<table>> LIGHTORANGE
+    class tasks <<table>> LIGHTORANGE
+    class milestone_questions <<table>> LIGHTORANGE
+  }
+  
+  ' Group 4: Collaboration
+  package "4. Collaboration\n(7 tables)" as G4 <<folder>> {
+    class meetings <<table>> LIGHTPURPLE
+    class meeting_participants <<table>> LIGHTPURPLE
+    class chat_messages <<table>> LIGHTPURPLE
+    class resources <<table>> LIGHTPURPLE
+    class whiteboard_sessions <<table>> LIGHTPURPLE
+    class document_sessions <<table>> LIGHTPURPLE
+    class video_sessions <<table>> LIGHTPURPLE {
+      (optional)
+    }
+  }
+  
+  ' Group 5: Evaluation
+  package "5. Evaluation\n(5 tables)" as G5 <<folder>> {
+    class peer_reviews <<table>> LIGHTYELLOW
+    class group_evaluations <<table>> LIGHTYELLOW
+    class member_evaluations <<table>> LIGHTYELLOW
+    class checkpoint_evaluations <<table>> LIGHTYELLOW
+    class milestone_answers <<table>> LIGHTYELLOW
+  }
+  
+  ' Group 6: Notification
+  package "6. Notification\n(1 table)" as G6 <<folder>> {
+    class notifications <<table>> LIGHTGRAY
+  }
+}
+
+' Layout hints
+G1 -[hidden]down-> G2
+G2 -[hidden]down-> G3
+G3 -[hidden]right-> G4
+G4 -[hidden]down-> G5
+G5 -[hidden]left-> G6
+
+' Title
+legend top
+  <b>CollabSphere Database Structure</b>
+  Total: 28 tables organized into 6 functional groups
+  
+  <b>Color Legend:</b>
+  <#E3F2FD>  </color> Users & Authentication
+  <#E8F5E9>  </color> Academic Management
+  <#FFF3E0>  </color> Project & Group
+  <#F3E5F5>  </color> Collaboration
+  <#FFFDE7>  </color> Evaluation
+  <#F5F5F5>  </color> Notification
+end legend
+
+@enduml

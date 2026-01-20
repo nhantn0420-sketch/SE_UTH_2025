@@ -1,0 +1,207 @@
+@startuml 4.2-module3-projects
+!define LIGHTORANGE #FFF3E0
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+skinparam nodesep 80
+skinparam ranksep 100
+
+skinparam class {
+  BackgroundColor LIGHTORANGE
+  BorderColor #F57C00
+  BorderThickness 2
+  ArrowColor #333333
+  FontStyle bold
+}
+
+top to bottom direction
+
+title Module 3: Project & Group Management
+
+' Projects section
+class projects <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  title : VARCHAR(255)
+  description : TEXT
+  objectives : TEXT
+  scope : TEXT
+  expected_outcomes : TEXT
+  <color:blue>🔗 FK</color> created_by : INTEGER
+  <color:blue>🔗 FK</color> approved_by : INTEGER
+  status : VARCHAR(20)
+  approval_status : VARCHAR(20)
+  rejection_reason : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+class project_milestones <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> project_id : INTEGER
+  title : VARCHAR(255)
+  description : TEXT
+  order_index : INTEGER
+  duration_weeks : INTEGER
+  created_at : TIMESTAMP
+}
+
+class class_projects <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> class_id : INTEGER
+  <color:blue>🔗 FK</color> project_id : INTEGER
+  assigned_at : TIMESTAMP
+  max_groups : INTEGER
+}
+
+' Groups section
+class groups <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  name : VARCHAR(255)
+  <color:blue>🔗 FK</color> class_id : INTEGER
+  <color:blue>🔗 FK</color> project_id : INTEGER
+  <color:blue>🔗 FK</color> leader_id : INTEGER
+  description : TEXT
+  status : VARCHAR(20)
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+class group_members <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  <color:blue>🔗 FK</color> student_id : INTEGER
+  role : VARCHAR(50)
+  contribution_score : FLOAT
+  joined_at : TIMESTAMP
+}
+
+class group_milestones <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  title : VARCHAR(255)
+  description : TEXT
+  deadline : TIMESTAMP
+  status : VARCHAR(20)
+  is_completed : BOOLEAN
+  completed_at : TIMESTAMP
+  created_at : TIMESTAMP
+}
+
+class checkpoints <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  title : VARCHAR(255)
+  description : TEXT
+  deadline : TIMESTAMP
+  assigned_members : JSON
+  submission_url : TEXT
+  status : VARCHAR(20)
+  created_at : TIMESTAMP
+}
+
+class tasks <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> group_id : INTEGER
+  title : VARCHAR(255)
+  description : TEXT
+  <color:blue>🔗 FK</color> assigned_to : INTEGER
+  status : VARCHAR(20)
+  priority : VARCHAR(20)
+  due_date : TIMESTAMP
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+' External references
+class users_lecturer <<external>> {
+  role = 'LECTURER'/'HEAD'
+}
+
+class users_student <<external>> {
+  role = 'STUDENT'
+}
+
+' Relationships - Projects
+projects "1" o-- "0..*" project_milestones : defines >
+projects "*" -- "1" users_lecturer : created by >
+projects "*" -- "0..1" users_lecturer : approved by >
+
+class_projects "*" -- "1" projects : assigns >
+class_projects "*" -- "1" classes_external : to >
+
+' Relationships - Groups
+groups "*" -- "1" classes_external : belongs to >
+groups "*" -- "1" projects : implements >
+groups "*" -- "1" users_student : led by >
+
+groups "1" o-- "0..*" group_members : has >
+groups "1" o-- "0..*" group_milestones : tracks >
+groups "1" o-- "0..*" checkpoints : monitors >
+groups "1" o-- "0..*" tasks : manages >
+
+group_members "*" -- "1" users_student : enrolled >
+
+' External classes
+class classes_external <<external>> {
+  from Academic module
+}
+
+' Layout hints
+projects -[hidden]down-> class_projects
+class_projects -[hidden]down-> groups
+groups -[hidden]down-> group_members
+group_members -[hidden]right-> group_milestones
+group_milestones -[hidden]right-> checkpoints
+checkpoints -[hidden]right-> tasks
+
+note top of projects
+  **Project Templates**
+  
+  • Created by Lecturer
+  • Approved by Head of Department
+  • Status: PENDING/SUBMITTED/APPROVED/REJECTED
+  • Reusable across multiple classes
+end note
+
+note bottom of groups
+  **Student Groups**
+  
+  • One project per group
+  • Group leader (student)
+  • Status: ACTIVE/INACTIVE/COMPLETED
+  
+  **Related entities (1:N):**
+  ├─► group_members
+  ├─► group_milestones
+  ├─► checkpoints
+  ├─► tasks
+  ├─► chat_messages
+  └─► resources
+end note
+
+legend bottom right
+  <b>Table Legend:</b>
+  <color:gold>🔑</color> Primary Key
+  <color:blue>🔗</color> Foreign Key
+  
+  <b>Key Workflows:</b>
+  1. Lecturer creates Project
+  2. Head approves Project
+  3. Project assigned to Classes
+  4. Students form Groups
+  5. Groups implement Projects
+  6. Groups track Milestones/Tasks
+end legend
+
+@enduml

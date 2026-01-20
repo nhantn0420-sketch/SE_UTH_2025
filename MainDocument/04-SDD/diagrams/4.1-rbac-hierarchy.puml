@@ -1,0 +1,187 @@
+@startuml 4.1-rbac-hierarchy
+!theme plain
+skinparam linetype ortho
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam nodesep 80
+skinparam ranksep 100
+top to bottom direction
+
+title Role-Based Access Control (RBAC) Hierarchy - CollabSphere
+
+' Professional UML Class Diagram styling
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #424242
+    FontSize 11
+    FontStyle bold
+    AttributeFontSize 9
+    StereotypeFontSize 10
+}
+
+skinparam note {
+    BackgroundColor #FFFDE7
+    BorderColor #F9A825
+    FontSize 9
+}
+
+' === Abstract Base Class ===
+abstract class User {
+    + id: UUID
+    + username: String
+    + email: String
+    + role: RoleEnum
+    + accessLevel: Integer
+    __
+    + authenticate(): Boolean
+    + hasPermission(action): Boolean
+    + getAccessLevel(): Integer
+}
+
+' === Role Hierarchy Classes ===
+class Admin {
+    <<Role: Highest Privilege>>
+    + accessLevel = 100
+    __
+    **Permissions:**
+    + manageUsers(): void
+    + configureSystem(): void
+    + viewAuditLogs(): void
+    + accessAllFeatures(): void
+    + manageDatabaseBackup(): void
+}
+
+class Staff {
+    <<Role: Academic Management>>
+    + accessLevel = 80
+    __
+    **Permissions:**
+    + importSubjects(): void
+    + importClasses(): void
+    + importUsers(): void
+    + manageAcademicStructure(): void
+    + viewReports(): void
+}
+
+class HeadOfDepartment {
+    <<Role: Project Oversight>>
+    + accessLevel = 70
+    + department: String
+    __
+    **Permissions:**
+    + approveProject(projectId): Boolean
+    + rejectProject(projectId): Boolean
+    + assignProjectToClass(): void
+    + viewLecturerActivities(): List
+    + generateReports(): Report
+}
+
+class Lecturer {
+    <<Role: Teaching & Evaluation>>
+    + accessLevel = 60
+    + assignedClasses: List<Class>
+    __
+    **Permissions:**
+    + createProject(): Project
+    + manageProject(id): void
+    + createGroup(): Group
+    + evaluateTeam(groupId): Evaluation
+    + evaluateMember(id): Evaluation
+    + chatWithStudents(): void
+}
+
+class Student {
+    <<Role: Learning & Collaboration>>
+    + accessLevel = 40
+    + enrolledClasses: List<Class>
+    + groupMemberships: List<Group>
+    __
+    **Permissions:**
+    + viewAssignedClasses(): List
+    + manageTasks(): void
+    + submitCheckpoint(id): void
+    + peerReview(memberId): Review
+    + chatWithTeam(): void
+}
+
+' === UML Generalization (Inheritance) ===
+User <|-- Admin
+User <|-- Staff
+User <|-- HeadOfDepartment
+User <|-- Lecturer
+User <|-- Student
+
+' === Associations ===
+HeadOfDepartment "1" o-[#blue]- "0..*" Lecturer : supervises >
+Lecturer "1" o-[#green]- "0..*" Student : teaches >
+
+' === Layout Control (Hidden Links) ===
+' Force vertical alignment - Admin at top, Student at bottom
+Admin -[hidden]down- Staff
+Staff -[hidden]down- HeadOfDepartment
+HeadOfDepartment -[hidden]down- Lecturer
+Lecturer -[hidden]down- Student
+
+' Keep User abstract class on the side
+User -[hidden]right- Admin
+
+' === Annotations ===
+note top of User
+    **Authorization Flow:**
+    1. User authenticates (JWT)
+    2. System extracts role
+    3. Check accessLevel
+    4. Verify permissions
+    5. Grant/Deny access
+end note
+
+note right of Admin
+    **Full System Access**
+    ✓ All operations allowed
+    ✓ User management
+    ✓ System configuration
+end note
+
+note right of Student
+    **Limited Access**
+    ✓ Read-only for most resources
+    ✓ Can only modify own data
+    ✓ Collaboration within group
+end note
+
+legend bottom left
+    |= Role |= Access Level |= User Count |
+    | Admin | 100 | 1-2 |
+    | Staff | 80 | 5-10 |
+    | Head of Department | 70 | 3-5 |
+    | Lecturer | 60 | 50-100 |
+    | Student | 40 | 500-1000 |
+    
+    **Inheritance:** All roles inherit from User
+    **Associations:** 
+    • Blue = Supervision relationship
+    • Green = Teaching relationship
+endlegend
+
+staff -[hidden]down-> head
+head -down-> lecturer : supervises
+lecturer -down-> student : teaches
+
+' Legend
+legend right
+    |= Role |= User Count |= Access Level |
+    | Admin | 1-2 | 100% - Full system access |
+    | Staff | 5-10 | 80% - Academic management |
+    | Head | 3-5 | 70% - Department oversight |
+    | Lecturer | 50-100 | 60% - Teaching & evaluation |
+    | Student | 500-1000 | 40% - Learning & collaboration |
+    
+    **Authorization Flow:**
+    1. User authenticates with JWT token
+    2. System extracts user role from token
+    3. Role-based middleware checks permissions
+    4. Grant or deny access to resources
+endlegend
+
+@enduml
