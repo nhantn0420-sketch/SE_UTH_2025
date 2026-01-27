@@ -1,0 +1,276 @@
+@startuml 4.3.1-class-user-module
+!theme plain
+skinparam linetype ortho
+
+' ============================================
+' STYLING
+' ============================================
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+skinparam shadowing false
+
+' Class styling
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1976D2
+    BorderThickness 2
+    HeaderBackgroundColor #E3F2FD
+    FontStyle bold
+    FontSize 12
+    AttributeFontSize 9
+    AttributeFontName Courier New
+}
+
+' Enum styling
+skinparam enum {
+    BackgroundColor #FFFFFF
+    BorderColor #FF9800
+    BorderThickness 2
+    HeaderBackgroundColor #FFF9C4
+    FontStyle bold
+    FontSize 11
+}
+
+' Arrow styling
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 8
+}
+
+' Title
+title <size:16><b>User & Authentication Module - Class Diagram</b></size>\n<size:11>Core authentication and user management</size>
+
+' ============================================
+' MAIN ENTITY: USER
+' ============================================
+class User <<Entity>> {
+    ' Primary Key
+    - id: int <<PK>>
+    
+    ' Authentication
+    - username: string <<UNIQUE>>
+    - email: string <<UNIQUE>>
+    - hashed_password: string
+    
+    ' Profile
+    - full_name: string
+    - avatar_url: string?
+    - phone: string?
+    
+    ' Authorization
+    - role: UserRole <<FK>>
+    
+    ' Status
+    - is_active: bool
+    - is_verified: bool
+    - last_login: datetime?
+    
+    ' Timestamps
+    - created_at: datetime
+    - updated_at: datetime
+    __
+    ' Constructor
+    + __init__(username, email, password, role)
+    
+    ' Authentication
+    + verify_password(plain: string): bool
+    + set_password(plain: string): void
+    + generate_token(): string
+    + refresh_token(old_token: string): string
+    
+    ' Authorization checks
+    + is_admin(): bool
+    + is_head(): bool
+    + is_staff(): bool
+    + is_lecturer(): bool
+    + is_student(): bool
+    + can_approve_projects(): bool
+    + can_manage_users(): bool
+    
+    ' Profile management
+    + update_profile(data: dict): void
+    + upload_avatar(file: File): string
+    + change_password(old: string, new: string): bool
+    + reset_password(token: string, new: string): bool
+    
+    ' Utility
+    + to_dict(): dict
+    + __repr__(): string
+}
+
+' ============================================
+' ENUMERATION: USER ROLE
+' ============================================
+enum UserRole {
+    ADMIN
+    DEPARTMENT_HEAD
+    ACADEMIC_STAFF
+    LECTURER
+    STUDENT
+}
+
+' ============================================
+' SUPPORTING ENTITIES
+' ============================================
+class Session <<Entity>> {
+    - id: int <<PK>>
+    - user_id: int <<FK>>
+    - access_token: string <<UNIQUE>>
+    - refresh_token: string <<UNIQUE>>
+    - expires_at: datetime
+    - ip_address: string?
+    - user_agent: string?
+    - created_at: datetime
+    __
+    + is_valid(): bool
+    + revoke(): void
+}
+
+class ActivityLog <<Entity>> {
+    - id: int <<PK>>
+    - user_id: int <<FK>>
+    - action: string
+    - details: json?
+    - ip_address: string?
+    - created_at: datetime
+    __
+    + log(user_id, action, details): void
+}
+
+class PasswordResetToken <<Entity>> {
+    - id: int <<PK>>
+    - user_id: int <<FK>>
+    - token: string <<UNIQUE>>
+    - expires_at: datetime
+    - used: bool
+    - created_at: datetime
+    __
+    + generate(user: User): string
+    + verify(token: string): User?
+    + mark_as_used(): void
+}
+
+class EmailVerificationToken <<Entity>> {
+    - id: int <<PK>>
+    - user_id: int <<FK>>
+    - token: string <<UNIQUE>>
+    - expires_at: datetime
+    - verified: bool
+    - created_at: datetime
+    __
+    + generate(user: User): string
+    + verify(token: string): bool
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' User -> UserRole (Association)
+User "1" --> "1" UserRole : has role >
+
+' User -> Session (One-to-Many)
+User "1" --> "0..*" Session : has sessions >
+
+' User -> ActivityLog (One-to-Many)
+User "1" --> "0..*" ActivityLog : has activity logs >
+
+' User -> PasswordResetToken (One-to-Many)
+User "1" --> "0..*" PasswordResetToken : requests password reset >
+
+' User -> EmailVerificationToken (One-to-Many)
+User "1" --> "0..1" EmailVerificationToken : has verification token >
+
+' ============================================
+' NOTES & ANNOTATIONS
+' ============================================
+note top of User
+    <b>Core User Entity</b>
+    ──────────────────────
+    • Primary authentication entity
+    • 5 roles with different permissions
+    • JWT token-based authentication
+    • bcrypt password hashing
+    • Email verification required
+end note
+
+note right of UserRole
+    <b>User Roles</b>
+    ────────────────
+    • <b>ADMIN:</b> Full system access
+    • <b>DEPARTMENT_HEAD:</b> Approve projects
+    • <b>ACADEMIC_STAFF:</b> Manage subjects/classes
+    • <b>LECTURER:</b> Create projects, evaluate
+    • <b>STUDENT:</b> Join groups, submit work
+end note
+
+note bottom of Session
+    <b>Session Management</b>
+    ──────────────────────
+    • Access token: 15 min expiry
+    • Refresh token: 7 days expiry
+    • One user can have multiple sessions
+    • Track IP & user agent for security
+end note
+
+note right of ActivityLog
+    <b>Audit Trail</b>
+    ───────────────
+    Actions logged:
+    • login, logout
+    • password_change
+    • profile_update
+    • role_change
+    • user_create, user_delete
+end note
+
+' ============================================
+' LEGEND
+' ============================================
+legend bottom left
+    <b>NOTATION:</b>
+    • <<PK>> = Primary Key
+    • <<FK>> = Foreign Key
+    • <<UNIQUE>> = Unique constraint
+    • ? = Nullable field
+    • 1 = Exactly one
+    • 0..* = Zero or many
+    • 0..1 = Zero or one
+    
+    <b>VISIBILITY:</b>
+    • <b>+</b> public
+    • <b>-</b> private
+    • <b>#</b> protected
+end legend
+
+' ============================================
+' DESIGN PATTERNS
+' ============================================
+note as Patterns
+    <b>DESIGN PATTERNS USED</b>
+    ═══════════════════════
+    
+    <b>1. Entity Pattern:</b>
+    • User is a domain entity
+    • Rich domain model with behavior
+    
+    <b>2. Value Object:</b>
+    • UserRole is immutable
+    • Enumeration ensures type safety
+    
+    <b>3. Token Pattern:</b>
+    • Separate tokens for different purposes
+    • Expiration and single-use enforced
+    
+    <b>4. Audit Log Pattern:</b>
+    • Track all user actions
+    • Immutable log entries
+end note
+
+Patterns .down. User
+
+@enduml

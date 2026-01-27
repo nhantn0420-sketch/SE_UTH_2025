@@ -1,0 +1,125 @@
+@startuml 4.3.18-state-checkpoint
+!theme plain
+
+skinparam backgroundColor #FFFFFF
+skinparam state {
+    BackgroundColor #F5F5F5
+    BorderColor #1976D2
+    BorderThickness 2
+    FontSize 11
+    FontName Arial
+}
+skinparam ArrowColor #424242
+
+title <b>Checkpoint Submission - State Machine</b>\n<size:10>UML 2.5 State Diagram</size>
+
+[*] --> NotStarted
+
+state NotStarted {
+  NotStarted : entry / setDeadline()
+}
+
+NotStarted --> choice1
+choice1 --> InProgress : start() [beforeDeadline]
+choice1 --> Missed : checkDeadline() [deadlinePassed]
+
+state InProgress {
+  [*] --> Working
+  
+  state Working {
+    Working : do / autoSave()
+  }
+  
+  state UploadingFiles {
+    UploadingFiles : do / validateFiles()
+  }
+  
+  Working --> UploadingFiles : attachFiles()
+  UploadingFiles --> Working : addContent()
+}
+
+InProgress --> submitChoice
+submitChoice --> Submitted : submit() [onTime] / lockSubmission()
+submitChoice --> Late : submit() [late] / applyPenalty()
+
+state Submitted {
+  Submitted : entry / runPlagiarismCheck()
+  Submitted : do / notifyLecturer()
+}
+
+state Late {
+  Late : Penalty: -10% per day
+}
+
+Submitted --> UnderReview : / assignLecturer()
+Late --> UnderReview : / assignLecturer()
+
+state UnderReview {
+  UnderReview : do / evaluate()
+}
+
+UnderReview --> evaluationChoice
+evaluationChoice --> Graded : complete() [gradeValid] / publishGrade()
+evaluationChoice --> Resubmission : reject() [needsRevision] / notifyGroup()
+
+state Resubmission
+Resubmission --> Submitted : resubmit() [within24h]
+Resubmission --> Failed : timeout() [gracePeriodExpired]
+
+state Graded {
+  Graded : entry / notifyStudents()
+}
+
+Graded --> appealChoice
+appealChoice --> Appealed : appeal() [within3days]
+appealChoice --> Final : accept() [noAppeal]
+
+state Appealed {
+  Appealed : entry / notifyHead()
+}
+
+Appealed --> regradChoice
+regradChoice --> Regraded : acceptAppeal() [valid] / assignNewLecturer()
+regradChoice --> Final : rejectAppeal() [invalid]
+
+state Regraded {
+  Regraded : do / reevaluate()
+}
+
+Regraded --> Final : finalize() / lockGrade()
+
+state Missed {
+  Missed : entry / setGrade(0)
+}
+
+Missed --> Late : lateSubmit() [daysLate <= 3]
+Missed --> Failed : / record()
+
+state Failed
+Failed --> Final
+
+state Final {
+  Final : entry / archive()
+}
+
+Final --> [*]
+
+note right of Late
+  <b>Late Policy:</b>
+  • Day 1: -10%
+  • Day 2: -20%
+  • Day 3: -30%
+  • >3 days: fail
+end note
+
+legend right
+  <b>UML 2.5 Notation</b>
+  ──────────────────
+  • Diamond: choice/decision
+  • Transition:
+    <i>event [guard] / action</i>
+  • entry/do/exit:
+    internal behaviors
+end legend
+
+@enduml

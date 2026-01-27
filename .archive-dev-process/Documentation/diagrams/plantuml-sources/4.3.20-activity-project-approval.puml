@@ -1,0 +1,202 @@
+@startuml 4.3.20-activity-project-approval
+!theme plain
+
+' ============================================
+' STYLING
+' ============================================
+skinparam activityFontSize 10
+skinparam activityFontName Arial
+skinparam backgroundColor #FAFAFA
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #1976D2
+    BorderThickness 2
+    FontStyle bold
+    FontSize 10
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 9
+}
+
+title <size:16><b>Project Approval Workflow - Activity Diagram</b></size>\n<size:11>UML 2.5 Activity Diagram with Swimlanes</size>
+
+' ============================================
+' ACTIVITY DIAGRAM
+' ============================================
+
+|#E3F2FD|Lecturer|
+start
+:Create new project\n**<<action>>**;
+note right
+  Fill in:
+  - Title
+  - Description
+  - Objectives
+  - Requirements
+  - Milestones (optional)
+end note
+
+:Edit project details;
+
+if (Use AI to generate milestones?) then (yes)
+  |System|
+  :Call AWS Bedrock AI;
+  :Generate milestone suggestions;
+  |Lecturer|
+  :Review AI suggestions;
+  :Adjust milestones;
+else (no)
+  :Manually create milestones;
+endif
+
+:Validate all required fields;
+
+if (All fields complete?) then (no)
+  :Show validation errors;
+  stop
+else (yes)
+  :Submit project for approval;
+  :Set status = PENDING;
+  |System|
+  :Send notification to Head;
+  note right
+    Notification includes:
+    - Project title
+    - Lecturer name
+    - Submission timestamp
+    - Link to review page
+  end note
+endif
+
+|Department Head|
+:Receive notification;
+:Open project review page;
+:Read project details;
+
+fork
+  :Check alignment with curriculum;
+fork again
+  :Evaluate project scope;
+fork again
+  :Review milestones;
+fork again
+  :Check resource requirements;
+end fork
+
+:Analyze all criteria;
+
+if (Project meets all criteria?) then (yes)
+  
+  if (Minor revisions needed?) then (yes)
+    :Add review comments;
+    :Request revision;
+    |System|
+    :Set status = DRAFT;
+    :Notify lecturer;
+    |Lecturer|
+    :Receive revision request;
+    :Read Head's comments;
+    :Make revisions;
+    :Resubmit project;
+    |Department Head|
+    :Review again;
+  endif
+  
+  :Approve project;
+  note right
+    Record:
+    - Approval timestamp
+    - Head's comments
+    - Conditions (if any)
+  end note
+  
+  |System|
+  :Set status = APPROVED;
+  :Send approval notification;
+  
+  fork
+    |Lecturer|
+    :Receive approval notification;
+    :Project available for assignment;
+  fork again
+    |System|
+    :Add to available projects pool;
+    :Visible to students;
+  end fork
+  
+else (no)
+  |Department Head|
+  :Write rejection reason;
+  note right
+    Reasons may include:
+    - Out of scope
+    - Too complex/simple
+    - Duplicate project
+    - Resource unavailable
+  end note
+  
+  :Reject project;
+  
+  |System|
+  :Set status = REJECTED;
+  :Send rejection notification;
+  
+  |Lecturer|
+  :Receive rejection notification;
+  :Read rejection reason;
+  
+  if (Want to revise and resubmit?) then (yes)
+    :Create new project (revision);
+    :Reference original project;
+    :Submit again;
+    stop
+  else (no)
+    :Archive rejected project;
+    stop
+  endif
+endif
+
+|Lecturer|
+if (Assign to specific class?) then (yes)
+  :Select class;
+  :Assign project to class;
+  |System|
+  :Set status = ACTIVE;
+  :Notify students in class;
+  stop
+else (no)
+  :Leave in project pool;
+  note right
+    Students can browse
+    and select from pool
+  end note
+  stop
+endif
+
+note bottom
+  **Business Rules:**
+  1. Only Department Head can approve/reject
+  2. Lecturer can only submit (not approve)
+  3. Pending timeout: 7 days (auto-notify Head)
+  4. Max 3 resubmissions per project
+  5. Rejected projects can be revised
+  
+  **Time Constraints:**
+  - Submission to review: < 1 hour
+  - Review duration: max 7 days
+  - Auto-reminder: 3 days, 6 days
+  - Auto-escalate: after 7 days
+  
+  **Notification Channels:**
+  - Email (immediate)
+  - In-app notification (real-time)
+  - Dashboard alert (persistent)
+end note
+
+@enduml

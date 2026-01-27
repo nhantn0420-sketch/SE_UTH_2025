@@ -1,0 +1,292 @@
+@startuml 4.3.5-class-collaboration-module
+!theme plain
+skinparam linetype ortho
+
+skinparam classAttributeIconSize 0
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 5
+skinparam shadowing false
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #9C27B0
+    BorderThickness 2
+    HeaderBackgroundColor #F3E5F5
+    FontStyle bold
+    FontSize 12
+    AttributeFontSize 9
+    AttributeFontName Courier New
+}
+
+skinparam enum {
+    BackgroundColor #FFFFFF
+    BorderColor #7B1FA2
+    BorderThickness 1
+    HeaderBackgroundColor #E1BEE7
+}
+
+skinparam arrow {
+    Color #424242
+    Thickness 2
+    FontSize 8
+}
+
+title <size:16><b>Collaboration Module - Class Diagram</b></size>\n<size:11>Real-time Chat, Video Meetings, File Sharing & Whiteboard</size>
+
+' ============================================
+' MEETING ENTITIES
+' ============================================
+class Meeting <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - title: string
+    - description: string?
+    - scheduled_at: datetime
+    - started_at: datetime?
+    - ended_at: datetime?
+    - meeting_url: string?
+    - recording_url: string?
+    - status: MeetingStatus
+    - created_by: int <<FK>>
+    - created_at: datetime
+    __
+    + schedule(title, time): void
+    + start(): void
+    + end(): void
+    + add_participant(user): MeetingParticipant
+    + get_duration(): int
+}
+
+class MeetingParticipant <<Entity>> {
+    - id: int <<PK>>
+    - meeting_id: int <<FK>>
+    - user_id: int <<FK>>
+    - joined_at: datetime?
+    - left_at: datetime?
+    - duration_minutes: int
+    - role: ParticipantRole
+    __
+    + join(): void
+    + leave(): void
+    + calculate_duration(): int
+}
+
+enum MeetingStatus {
+    SCHEDULED
+    IN_PROGRESS
+    COMPLETED
+    CANCELLED
+}
+
+enum ParticipantRole {
+    HOST
+    CO_HOST
+    PARTICIPANT
+}
+
+' ============================================
+' CHAT ENTITIES
+' ============================================
+class ChatMessage <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - sender_id: int <<FK>>
+    - content: string
+    - message_type: MessageType
+    - reply_to: int? <<FK>>
+    - is_edited: bool
+    - edited_at: datetime?
+    - created_at: datetime
+    __
+    + edit(new_content): void
+    + reply(content): ChatMessage
+    + mention_user(user): void
+    + delete(): void
+}
+
+enum MessageType {
+    TEXT
+    FILE
+    IMAGE
+    MENTION
+    SYSTEM
+}
+
+' ============================================
+' RESOURCE ENTITIES
+' ============================================
+class Resource <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - uploaded_by: int <<FK>>
+    - file_name: string
+    - file_url: string
+    - file_size: int
+    - file_type: string
+    - description: string?
+    - uploaded_at: datetime
+    __
+    + download(): bytes
+    + share_with(users): void
+    + delete(): void
+}
+
+' ============================================
+' WHITEBOARD ENTITIES
+' ============================================
+class WhiteboardSession <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - title: string
+    - canvas_data: json
+    - created_by: int <<FK>>
+    - last_modified_by: int? <<FK>>
+    - created_at: datetime
+    - updated_at: datetime
+    __
+    + draw(shapes): void
+    + erase(shape_id): void
+    + save_snapshot(): string
+    + restore(snapshot): void
+}
+
+class DocumentSession <<Entity>> {
+    - id: int <<PK>>
+    - group_id: int <<FK>>
+    - title: string
+    - content: string
+    - created_by: int <<FK>>
+    - last_modified_by: int? <<FK>>
+    - version: int
+    - created_at: datetime
+    - updated_at: datetime
+    __
+    + edit(content): void
+    + save_version(): void
+    + restore_version(v): void
+}
+
+' ============================================
+' EXTERNAL REFERENCES
+' ============================================
+class Group <<External>> {
+    - id: int <<PK>>
+    - name: string
+}
+
+class User <<External>> {
+    - id: int <<PK>>
+    - full_name: string
+}
+
+' ============================================
+' RELATIONSHIPS
+' ============================================
+
+' Meeting relationships
+Meeting "*" --> "1" Group : belongs to
+Meeting "1" --> "1..*" MeetingParticipant : has participants
+MeetingParticipant "*" --> "1" User : participant
+Meeting "*" --> "1" User : created by
+Meeting --> MeetingStatus : has status
+MeetingParticipant --> ParticipantRole : has role
+
+' Chat relationships
+ChatMessage "*" --> "1" Group : group chat
+ChatMessage "*" --> "1" User : sent by
+ChatMessage "*" ..> "0..1" ChatMessage : replies to
+ChatMessage --> MessageType : has type
+
+' Resource relationships
+Resource "*" --> "1" Group : shared in group
+Resource "*" --> "1" User : uploaded by
+
+' Whiteboard relationships
+WhiteboardSession "*" --> "1" Group : belongs to
+WhiteboardSession "*" --> "1" User : created by
+WhiteboardSession "*" ..> "0..1" User : last modified by
+
+' Document relationships
+DocumentSession "*" --> "1" Group : belongs to
+DocumentSession "*" --> "1" User : created by
+DocumentSession "*" ..> "0..1" User : last modified by
+
+' ============================================
+' NOTES
+' ============================================
+note top of Meeting
+    <b>Video Meeting</b>
+    ────────────────────
+    • WebRTC P2P video calls
+    • Screen sharing support
+    • Recording capability
+    • Track attendance, duration
+    
+    <b>Real-time Features:</b>
+    • Socket.IO for signaling
+    • STUN/TURN for ICE
+    • Up to 10 participants
+end note
+
+note right of ChatMessage
+    <b>Group Chat</b>
+    ──────────────────
+    • WebSocket real-time sync
+    • Message types: text, file,
+      image, mention, system
+    • Reply threads
+    • Edit within 5 minutes
+    • @mentions notification
+    
+    <b>Features:</b>
+    • Typing indicators
+    • Read receipts
+    • Emoji reactions
+end note
+
+note bottom of Resource
+    <b>File Sharing</b>
+    ────────────────────
+    • Upload to Cloudinary
+    • Max 100MB per file
+    • Supports: PDF, DOCX,
+      XLSX, images, videos
+    • Generate CDN URLs
+    • Track downloads
+end note
+
+note right of WhiteboardSession
+    <b>Collaborative Tools</b>
+    ───────────────────────────
+    <b>Whiteboard:</b>
+    • Draw shapes, text, images
+    • Real-time sync (Socket.IO)
+    • Canvas saved as JSON
+    • Snapshot restore
+    
+    <b>Document:</b>
+    • Markdown editor
+    • Operational Transform (OT)
+    • Version history
+    • Auto-save every 30s
+end note
+
+legend bottom left
+    <b>REAL-TIME TECHNOLOGIES:</b>
+    • <b>Socket.IO:</b> Chat, Whiteboard, Document sync
+    • <b>WebRTC:</b> Video/audio P2P streams
+    • <b>Cloudinary:</b> File storage & CDN
+    • <b>Operational Transform:</b> Conflict resolution
+    
+    <b>SUPPORTED FEATURES:</b>
+    • Group chat with mentions
+    • Video calls (up to 10 participants)
+    • Screen sharing & recording
+    • File upload/download
+    • Collaborative whiteboard
+    • Real-time document editing
+end legend
+
+@enduml

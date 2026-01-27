@@ -1,0 +1,197 @@
+@startuml Submit Checkpoint Flow
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Submit Checkpoint with Files (UC018)
+
+actor "Student" as student #E3F2FD
+participant "Frontend\n(React)" as frontend #FFF3E0
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+participant "Storage\n(Cloudinary)" as storage #FFF9C4
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== View Milestone Checkpoints ==
+
+student -> frontend: Navigate to\nTeam Milestones
+activate frontend
+
+frontend -> backend: GET /api/groups/{id}/milestones
+activate backend
+
+backend -> db: SELECT group_milestones\nJOIN checkpoints\nWHERE group_id = ?
+activate db
+db --> backend: Milestones with checkpoints
+deactivate db
+
+backend --> frontend: 200 OK\n{milestones: [...]}
+deactivate backend
+
+frontend --> student: Display milestones\nwith checkpoints:\n- Status (pending/submitted)\n- Deadlines
+deactivate frontend
+
+== Open Checkpoint Submission ==
+
+student -> frontend: Click on\npending checkpoint
+activate frontend
+
+frontend -> backend: GET /api/checkpoints/{id}
+activate backend
+
+backend -> db: SELECT checkpoint details
+activate db
+db --> backend: Checkpoint info
+deactivate db
+
+backend --> frontend: 200 OK\n{checkpoint details}
+deactivate backend
+
+frontend --> student: Show submission form:\n- Text area\n- File upload zone\n- Submit button
+deactivate frontend
+
+== Fill Submission Form ==
+
+student -> frontend: Enter submission text\n(description, notes)
+activate frontend
+
+student -> frontend: Select files to upload\n(documents, code, images)
+frontend -> frontend: Validate:\n- File types (PDF, DOCX, PNG, etc.)\n- File sizes (< 10MB each)\n- Total size (< 100MB)
+
+alt Validation Failed
+    frontend --> student: Show error:\n"File too large" or\n"Invalid file type"
+end
+
+deactivate frontend
+
+== Upload Files to Storage ==
+
+student -> frontend: Click "Submit"
+activate frontend
+
+frontend --> student: Show uploading progress
+
+loop For each file
+    frontend -> storage: Upload file\n(multipart form-data)
+    activate storage
+    
+    note right of storage
+      Cloudinary handles:
+      - File storage
+      - Automatic optimization
+      - CDN distribution
+      - Generates secure URL
+    end note
+    
+    storage --> frontend: File URL\n{url, public_id, format}
+    deactivate storage
+    
+    frontend -> frontend: Add URL to array
+end
+
+frontend --> student: "All files uploaded"
+deactivate frontend
+
+== Submit Checkpoint ==
+
+student -> frontend: Confirm submission
+activate frontend
+
+frontend -> backend: POST /api/checkpoint-submissions\n{checkpoint_id,\nsubmission_text,\nfile_urls: [...],\nsubmitted_by: user_id}
+activate backend
+
+backend -> backend: Validate:\n- Student in team\n- Checkpoint belongs to team\n- Not already submitted
+
+backend -> db: SELECT checkpoint\nJOIN group_milestones gm\nJOIN groups g\nWHERE checkpoint.id = ?\nAND g.id IN\n(SELECT group_id FROM group_members\nWHERE user_id = ?)
+activate db
+db --> backend: Checkpoint verification
+
+alt Checkpoint Valid and Not Submitted
+    
+    backend -> db: SELECT due_date\nFROM checkpoints\nWHERE id = ?
+    db --> backend: due_date
+    
+    backend -> backend: Check if late:\nlate = NOW() > due_date
+    
+    backend -> db: BEGIN TRANSACTION
+    
+    backend -> db: INSERT INTO checkpoint_submissions\n(checkpoint_id, submission_text,\nsubmitted_by, submitted_at,\nis_late)\nRETURNING id
+    db --> backend: submission_id
+    
+    loop For each file_url
+        backend -> db: INSERT INTO resource_files\n(submission_id, url, file_name,\nfile_size, file_type)
+        db --> backend: Success
+    end
+    
+    backend -> db: UPDATE checkpoints\nSET status = 'submitted',\nsubmitted_at = NOW()
+    db --> backend: Success
+    
+    backend -> db: INSERT INTO notifications\n(user_id: lecturer_id,\ntype: 'checkpoint_submitted',\nmessage: '...')
+    db --> backend: Success
+    
+    backend -> db: COMMIT TRANSACTION
+    db --> backend: Success
+    deactivate db
+    
+    backend --> frontend: 201 Created\n{submission_id, is_late}
+    deactivate backend
+    
+    alt Late Submission
+        frontend --> student: "Checkpoint submitted\n(LATE - penalty may apply)"
+    else On Time
+        frontend --> student: "Checkpoint submitted\nsuccessfully!"
+    end
+    
+    frontend -> frontend: Update checkpoint status\nto "submitted"
+    deactivate frontend
+    
+else Already Submitted
+    db --> backend: Existing submission found
+    deactivate db
+    
+    backend --> frontend: 409 Conflict\n{error: "Checkpoint already submitted"}
+    deactivate backend
+    
+    frontend --> student: "Already submitted.\nContact lecturer to resubmit."
+    deactivate frontend
+end
+
+== Error Handling ==
+
+alt File Upload Failed
+    storage --> frontend: Error (network, timeout)
+    frontend --> student: "Upload failed.\nRetrying..."
+    frontend -> storage: Retry upload (3 attempts)
+    
+    alt All Retries Failed
+        frontend --> student: "Upload failed.\nPlease try again later."
+    end
+end
+
+alt Student Not in Team
+    backend --> frontend: 403 Forbidden\n{error: "You are not a team member"}
+    frontend --> student: Show error
+end
+
+note right of backend
+  Business Rules:
+  - Max 100MB total upload per submission
+  - Allowed file types: PDF, DOCX, XLSX, 
+    PPTX, PNG, JPG, ZIP, MP4
+  - Late submissions marked but accepted
+  - Only team members can submit
+  - Lecturer notified immediately
+  
+  Security:
+  - Files stored in secure Cloudinary account
+  - URLs signed with expiry
+  - Virus scanning on upload
+end note
+
+@enduml

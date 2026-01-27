@@ -1,0 +1,138 @@
+@startuml 4.2-module2-academic
+!define LIGHTGREEN #E8F5E9
+
+skinparam backgroundColor white
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+skinparam class {
+  BackgroundColor LIGHTGREEN
+  BorderColor #388E3C
+  BorderThickness 2
+  ArrowColor #333333
+  FontStyle bold
+}
+
+top to bottom direction
+
+title Module 2: Academic Management
+
+class subjects <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:green>⚡ UNIQUE</color> code : VARCHAR(20)
+  name : VARCHAR(255)
+  credits : INTEGER
+  description : TEXT
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+class curricula <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> subject_id : INTEGER
+  content : TEXT
+  week_number : INTEGER
+  learning_outcomes : TEXT
+  created_at : TIMESTAMP
+}
+
+class classes <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:green>⚡ UNIQUE</color> code : VARCHAR(50)
+  name : VARCHAR(255)
+  <color:blue>🔗 FK</color> subject_id : INTEGER
+  <color:blue>🔗 FK</color> lecturer_id : INTEGER
+  semester : VARCHAR(20)
+  academic_year : VARCHAR(20)
+  max_students : INTEGER
+  status : VARCHAR(20)
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+class class_members <<table>> {
+  **<color:gold>🔑 PK</color> id : INTEGER**
+  --
+  <color:blue>🔗 FK</color> class_id : INTEGER
+  <color:blue>🔗 FK</color> student_id : INTEGER
+  role : VARCHAR(20)
+  joined_at : TIMESTAMP
+}
+
+' Relationships
+subjects "1" o-- "0..*" curricula : has >
+subjects "1" o-- "0..*" classes : taught in >
+
+classes "1" o-- "0..*" class_members : contains >
+classes "*" -- "1" users_lecturer : taught by >
+
+class_members "*" -- "1" users_student : enrolled as >
+
+' External references
+class users_lecturer <<external>> {
+  role = 'LECTURER'
+}
+
+class users_student <<external>> {
+  role = 'STUDENT'
+}
+
+' Notes
+note right of subjects
+  **Subject Information**
+  
+  • Course catalog
+  • Credit hours
+  • Prerequisites
+  
+  Example:
+  SE101 - Software Engineering (3 credits)
+end note
+
+note right of curricula
+  **Weekly Content**
+  
+  • Week-by-week breakdown
+  • Learning outcomes per week
+  • Aligned with subject
+end note
+
+note bottom of classes
+  **Class Sessions**
+  
+  • Semester-specific
+  • Max student capacity
+  • Status: ACTIVE/INACTIVE/COMPLETED
+  
+  Example:
+  SE1701 - Spring 2025
+end note
+
+note bottom of class_members
+  **Student Enrollment**
+  
+  • Many-to-many relationship
+  • Role: MEMBER or MONITOR
+  • Join timestamp tracking
+end note
+
+legend bottom right
+  <b>Table Legend:</b>
+  <color:gold>🔑</color> Primary Key
+  <color:blue>🔗</color> Foreign Key
+  <color:green>⚡</color> Unique Constraint
+  
+  <b>Key Relationships:</b>
+  • Subject → Classes (1:N)
+  • Subject → Curricula (1:N)
+  • Class → Members (1:N)
+  • Lecturer → Classes (1:N)
+  • Student → Class Members (1:N)
+end legend
+
+@enduml

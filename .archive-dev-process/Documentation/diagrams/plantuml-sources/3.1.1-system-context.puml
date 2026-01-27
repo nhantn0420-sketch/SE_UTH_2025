@@ -1,0 +1,81 @@
+@startuml 3.1.1-system-context
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 100
+
+title System Context Diagram - CollabSphere\n
+
+' ===== TOP LAYER: EXTERNAL ACTORS =====
+together {
+    actor "Admin" as admin #FF6B6B
+    actor "Academic\nStaff" as staff #4ECDC4
+    actor "Department\nHead" as head #95E1D3
+    actor "Lecturer" as lecturer #F38181
+    actor "Student" as student #FFA07A
+}
+
+' ===== MIDDLE LAYER: MAIN SYSTEM =====
+package "CollabSphere Web Application" as system #E8F5E9 {
+    component [React Frontend\n(SPA)] as frontend #81C784
+    component [FastAPI Backend\n(REST API)] as backend #66BB6A
+    component [WebSocket Server\n(Socket.IO)] as websocket #4CAF50
+    
+    frontend -down-> backend : HTTP/HTTPS
+    frontend -down-> websocket : WebSocket
+}
+
+' ===== BOTTOM LAYER: EXTERNAL SYSTEMS =====
+together {
+    database "PostgreSQL\nDatabase" as postgres #5C6BC0
+    cloud "Cloudinary\nFile Storage" as cloudinary #FFA726
+}
+
+together {
+    cloud "AWS Bedrock\n(Claude AI)" as bedrock #AB47BC
+    rectangle "SMTP Server\n(Email)" as smtp #78909C
+    rectangle "WebRTC Server\n(Video/Audio)" as webrtc #26A69A
+}
+
+' ===== ACTOR TO SYSTEM CONNECTIONS =====
+admin -down-> system : <<HTTPS>>\nManage Users,\nSubjects, Curricula
+staff -down-> system : <<HTTPS>>\nImport Students,\nManage Classes
+head -down-> system : <<HTTPS>>\nApprove Projects,\nMonitor Progress
+lecturer -down-> system : <<HTTPS>>\nCreate/Evaluate\nProjects
+student -down-> system : <<HTTPS>>\nJoin Groups,\nCollaborate
+
+' ===== SYSTEM TO EXTERNAL SERVICES =====
+backend -down-> postgres : <<SQL>>\nStore/Retrieve Data
+backend -down-> cloudinary : <<REST API>>\nUpload/Download Files\n(Max 100MB)
+backend -down-> bedrock : <<REST API>>\nAI Generate Milestones,\nChatbot
+backend -down-> smtp : <<SMTP>>\nSend Email\nNotifications
+websocket -down-> webrtc : <<WebRTC>>\nP2P Video Calls\n(Max 10 users)
+
+' ===== LEGEND =====
+legend right
+  **Actors**
+  | Color | Role |
+  | <back:#FF6B6B>  </back> | Admin |
+  | <back:#4ECDC4>  </back> | Academic Staff |
+  | <back:#95E1D3>  </back> | Department Head |
+  | <back:#F38181>  </back> | Lecturer |
+  | <back:#FFA07A>  </back> | Student |
+  ----
+  **Systems**
+  | <back:#E8F5E9>  </back> | CollabSphere System |
+  | <back:#5C6BC0>  </back> | Database |
+  | <back:#FFA726>  </back> | Cloud Services |
+  ----
+  **Protocols**
+  HTTPS: Web Interface
+  WebSocket: Real-time
+  SQL: Database Query
+  REST API: Service Integration
+  SMTP: Email Protocol
+  WebRTC: P2P Video/Audio
+endlegend
+
+@enduml

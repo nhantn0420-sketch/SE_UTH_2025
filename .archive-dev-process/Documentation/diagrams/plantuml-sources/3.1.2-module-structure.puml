@@ -1,0 +1,77 @@
+@startuml 3.1.2-module-structure
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 60
+skinparam ranksep 80
+
+title CollabSphere - Module Structure Diagram\n3-Tier Modular Architecture
+
+' ===== CORE TIER (Foundation Layer) =====
+package "Core Tier - Foundation Layer" as core #E3F2FD {
+    
+    component [1. User Management\n& Authentication\n━━━━━━━━━━━━━━━━\n• Login/Registration\n• JWT Token Auth\n• RBAC Permissions\n• Profile Management] as mod1 #BBDEFB
+    
+    component [2. Academic\nManagement\n━━━━━━━━━━━━━━━━\n• Subjects & Curricula\n• Class Management\n• Import Students (CSV)\n• Enrollment] as mod2 #BBDEFB
+    
+    component [3. Project\nManagement\n━━━━━━━━━━━━━━━━\n• Create Projects\n• AI Generate Milestones\n• Approve/Assign\n• Pick Projects] as mod3 #BBDEFB
+    
+    component [4. Group & Workspace\n━━━━━━━━━━━━━━━━\n• Team Formation (3-5)\n• Milestones & Checkpoints\n• Kanban Task Board\n• Member Tracking] as mod4 #BBDEFB
+}
+
+' ===== COLLABORATION TIER (Interaction Layer) =====
+package "Collaboration Tier - Team Interaction" as collab #FFF3E0 {
+    
+    component [5. Collaboration Tools\n━━━━━━━━━━━━━━━━\n• Real-time Chat (Socket.IO)\n• Video Calls (WebRTC)\n• Whiteboard Canvas\n• Collaborative Editor] as mod5 #FFE0B2
+    
+    component [6. Evaluation\n& Feedback\n━━━━━━━━━━━━━━━━\n• Team Evaluation\n• Peer Review (4D)\n• Checkpoint Grading\n• Grade Calculation] as mod6 #FFE0B2
+    
+    component [7. Resource\nManagement\n━━━━━━━━━━━━━━━━\n• Upload/Download\n• Cloudinary CDN\n• Max 100MB/file\n• Version Control] as mod7 #FFE0B2
+}
+
+' ===== SUPPORT TIER (Cross-cutting Layer) =====
+package "Support Tier - Cross-cutting Services" as support #E8F5E9 {
+    
+    component [8. AI Assistance\n& Notifications\n━━━━━━━━━━━━━━━━\n• AWS Bedrock Chatbot\n• Auto-gen Milestones\n• Real-time Notifications\n• Email (SMTP)] as mod8 #C8E6C9
+}
+
+' ===== DATA FLOW RELATIONSHIPS =====
+' Core tier dependencies (top-down)
+mod1 -down-> mod2 : <<authenticates>>
+mod2 -down-> mod3 : <<provides context>>
+mod3 -down-> mod4 : <<feeds projects>>
+
+' Core to Collaboration (horizontal)
+mod4 -right-> mod5 : <<enables\ncollaboration>>
+mod4 -right-> mod6 : <<submits for\nevaluation>>
+mod4 -right-> mod7 : <<manages\nresources>>
+
+' Collaboration to Support (triggers notifications)
+mod5 -down-> mod8 : <<chat/video\nevents>>
+mod6 -down-> mod8 : <<grade/review\nalerts>>
+mod7 -down-> mod8 : <<file upload\nnotifs>>
+
+' ===== LEGEND =====
+legend right
+  **Architecture Tiers**
+  | Tier | Purpose | Modules |
+  | <back:#E3F2FD>Core</back> | Foundation & Business Logic | 1-4 |
+  | <back:#FFF3E0>Collaboration</back> | Team Interaction Features | 5-7 |
+  | <back:#E8F5E9>Support</back> | Cross-cutting Services | 8 |
+  ====
+  **Dependencies Flow**
+  Core Tier provides foundation
+  ↓
+  Collaboration Tier enables teamwork
+  ↓
+  Support Tier triggers notifications
+  ====
+  **Total:** 8 Modules
+  **Integration:** REST API + WebSocket
+endlegend
+
+@enduml

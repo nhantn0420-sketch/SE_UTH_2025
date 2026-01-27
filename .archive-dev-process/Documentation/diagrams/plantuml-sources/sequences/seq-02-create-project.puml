@@ -1,0 +1,113 @@
+@startuml Create Project with AI
+!define PRIMARY_COLOR #E3F2FD
+!define SECONDARY_COLOR #FFF3E0
+!define SUCCESS_COLOR #E8F5E9
+!define ERROR_COLOR #FFEBEE
+
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Create Project Flow with AI Milestone Generation (UC002)
+
+actor "Lecturer" as lecturer #E3F2FD
+participant "Frontend\n(React)" as frontend #FFF3E0
+participant "Backend\n(FastAPI)" as backend #E8F5E9
+participant "AI Service\n(AWS Bedrock)" as ai #FFF9C4
+database "Database\n(PostgreSQL)" as db #F3E5F5
+
+== Create Project Form ==
+
+lecturer -> frontend: Navigate to "Create Project"
+activate frontend
+frontend --> lecturer: Display project form
+deactivate frontend
+
+lecturer -> frontend: Fill form:\n- Title\n- Description\n- Subject\n- Duration (weeks)
+activate frontend
+
+== Optional: AI Milestone Generation ==
+
+lecturer -> frontend: Click "Generate Milestones with AI"
+frontend -> backend: POST /api/ai/generate-milestones\n{description, duration}
+activate backend
+
+backend -> ai: Request milestone suggestions\n(Claude API)
+activate ai
+
+note right of ai
+  AI Prompt:
+  "Generate project milestones for:
+  Description: {description}
+  Duration: {duration} weeks
+  Return JSON with milestone titles,
+  descriptions, and week numbers"
+end note
+
+ai --> backend: JSON response:\n[{title, description, week_number}]
+deactivate ai
+
+backend -> backend: Parse and validate\nAI response
+
+backend --> frontend: 200 OK\n{milestones: [...]}
+deactivate backend
+
+frontend --> lecturer: Display suggested\nmilestones (editable)
+deactivate frontend
+
+== Manual Milestone Editing ==
+
+lecturer -> frontend: Review and edit milestones
+activate frontend
+lecturer -> frontend: Add/remove/modify milestones
+frontend --> lecturer: Updated milestone list
+deactivate frontend
+
+== Submit Project ==
+
+lecturer -> frontend: Click "Save and Submit"
+activate frontend
+
+frontend -> frontend: Validate form:\n- Title required\n- Description required\n- At least 2 milestones
+
+frontend -> backend: POST /api/projects\n{title, description, subject_id,\ncurriculum_id, duration_weeks,\nmilestones: [...]}
+activate backend
+
+backend -> backend: Validate:\n- Lecturer authorization\n- Required fields\n- Title uniqueness
+
+backend -> db: BEGIN TRANSACTION
+activate db
+
+backend -> db: INSERT INTO projects\n(title, description, ...)\nRETURNING id
+db --> backend: project_id
+
+backend -> db: INSERT INTO project_milestones\n(project_id, title, ...)\nFOR EACH milestone
+db --> backend: milestone_ids
+
+backend -> db: COMMIT TRANSACTION
+db --> backend: Success
+deactivate db
+
+backend --> frontend: 201 Created\n{project_id, status: "pending"}
+deactivate backend
+
+frontend --> lecturer: Show success message\n"Project created and submitted\nfor approval"
+deactivate frontend
+
+lecturer -> frontend: Redirect to "My Projects"
+
+note right of backend
+  Business Rules:
+  - Project title unique per lecturer
+  - At least 2 milestones required
+  - Status defaults to "pending"
+  - Awaits Head approval (UC003)
+  
+  Transaction:
+  - Atomic (project + milestones)
+  - Rollback on any error
+end note
+
+@enduml

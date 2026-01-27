@@ -1,0 +1,126 @@
+@startuml 4.3.21-activity-checkpoint-evaluation
+!theme plain
+
+skinparam backgroundColor #FFFFFF
+skinparam activity {
+    BackgroundColor #F5F5F5
+    BorderColor #1976D2
+    BorderThickness 2
+    FontSize 11
+    FontName Arial
+}
+skinparam ArrowColor #424242
+
+title <b>Checkpoint Evaluation - Activity Diagram</b>\n<size:10>UML 2.5 Activity Diagram</size>
+
+|Group Leader|
+start
+:Open checkpoint;
+:Upload files;
+:[Files]\nPDF, Code, PPT}
+:Write notes;
+
+if (All files?) then ([no])
+  :Show error;
+  stop
+endif
+
+:Submit;
+
+|System|
+:Record timestamp;
+
+if (On time?) then ([yes])
+  :[Checkpoint]\nstatus=SUBMITTED}
+else ([no])
+  if (≤3 days late?) then ([yes])
+    :Apply penalty;
+    :[Checkpoint]\nstatus=LATE\npenalty=-10%*days}
+  else ([no])
+    :[Checkpoint]\ngrade=0}
+    :Notify group;
+    stop
+  endif
+endif
+
+fork
+  :Upload to cloud;
+fork again
+  :Plagiarism check;
+fork again
+  :Notify lecturer;
+end fork
+
+|Lecturer|
+:Open submissions;
+
+repeat
+  :Select next group;
+  :Download files;
+  
+  fork
+    :Check quality;
+  fork again
+    :Check completeness;
+  fork again
+    :Test functionality;
+  end fork
+  
+  :Calculate score;
+  
+  if (Late?) then ([yes])
+    :Apply penalty;
+  endif
+  
+  :Enter grade;
+  :[Checkpoint]\ngrade=score}
+  
+repeat while (More groups?) is ([yes])
+->no;
+
+:Lock grades;
+
+|System|
+
+fork
+  :Notify students;
+fork again
+  :Update progress;
+end fork
+
+|Student|
+
+if (Disagree?) then ([yes])
+  :Submit appeal;
+  
+  |Department Head|
+  :Review appeal;
+  
+  if (Valid?) then ([yes])
+    :Request regrade;
+    |Lecturer|
+    :Reevaluate;
+    :[Checkpoint]\ngrade=newScore}
+  else ([no])
+    :Reject appeal;
+  endif
+  
+  |System|
+  :Notify student;
+endif
+
+|System|
+:Archive;
+stop
+
+legend right
+  <b>UML 2.5 Notation</b>
+  ──────────────────
+  • repeat-while: loop
+  • fork-join: parallel
+  • [Object]: data/object
+  • Diamond: decision
+  • detach: flow end
+end legend
+
+@enduml
