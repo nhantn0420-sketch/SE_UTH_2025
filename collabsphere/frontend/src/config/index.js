@@ -1,10 +1,10 @@
 // API Configuration
 const config = {
   // API Base URL
-  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1',
+  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8001/api/v1',
   
   // Socket.IO URL
-  SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'http://localhost:8000',
+  SOCKET_URL: process.env.REACT_APP_SOCKET_URL || 'http://localhost:8001',
   
   // Token keys
   ACCESS_TOKEN_KEY: 'collabsphere_access_token',

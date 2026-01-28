@@ -1,0 +1,16 @@
+name: "Documentation"
+description: "Report or request documentation changes"
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: change
+    attributes:
+      label: What should be updated?
+      placeholder: "Which doc file/section? What is wrong/missing?"
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested content
+      placeholder: "Propose wording, examples, screenshots, etc."

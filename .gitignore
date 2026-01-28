@@ -49,6 +49,14 @@ build/
 
 # Environment variables
 .env
+.env.*
+!.env.example
+
+# Local databases / artifacts
+*.db
+*.sqlite
+*.sqlite3
+.env
 
 # Database
 *.db

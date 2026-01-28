@@ -9,6 +9,12 @@
 [![Diagrams](https://img.shields.io/badge/diagrams-99-orange)](MainDocument/Images/)
 [![Completion](https://img.shields.io/badge/completion-92%25-brightgreen)]()
 
+[![Backend CI](https://github.com/nhantn0420-sketch/SE_UTH_2025/actions/workflows/backend-ci.yml/badge.svg)](https://github.com/nhantn0420-sketch/SE_UTH_2025/actions/workflows/backend-ci.yml)
+[![Frontend CI](https://github.com/nhantn0420-sketch/SE_UTH_2025/actions/workflows/frontend-ci.yml/badge.svg)](https://github.com/nhantn0420-sketch/SE_UTH_2025/actions/workflows/frontend-ci.yml)
+[![CodeQL](https://github.com/nhantn0420-sketch/SE_UTH_2025/actions/workflows/codeql.yml/badge.svg)](https://github.com/nhantn0420-sketch/SE_UTH_2025/actions/workflows/codeql.yml)
+
+**Project links**: [Changelog](CHANGELOG.md) • [Roadmap](ROADMAP.md) • [Contributing](CONTRIBUTING.md) • [Code of Conduct](CODE_OF_CONDUCT.md) • [Security](SECURITY.md) • [Support](SUPPORT.md)
+
 ---
 
 ## 📋 PROJECT OVERVIEW

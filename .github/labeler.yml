@@ -1,0 +1,12 @@
+backend:
+  - changed-files:
+      - any-glob-to-any-file: "collabsphere/backend/**"
+frontend:
+  - changed-files:
+      - any-glob-to-any-file: "collabsphere/frontend/**"
+docs:
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "MainDocument/**", "README.md"]
+ci:
+  - changed-files:
+      - any-glob-to-any-file: ".github/**"

@@ -1,0 +1,14 @@
+# Code owners for review routing
+# Replace placeholders with real GitHub usernames/teams.
+
+* @nhantn0420-sketch
+
+# Backend
+/collabsphere/backend/ @nhantn0420-sketch
+
+# Frontend
+/collabsphere/frontend/ @nhantn0420-sketch
+
+# Docs
+/docs/ @nhantn0420-sketch
+/MainDocument/ @nhantn0420-sketch
