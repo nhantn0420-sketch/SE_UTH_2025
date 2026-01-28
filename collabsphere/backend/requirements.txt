@@ -36,7 +36,7 @@ cloudinary==1.38.0
 aiosmtplib==3.0.1
 
 # Async utilities
-aiofiles==23.2.1
+aiofiles==25.1.0
 
 # Testing
 pytest==7.4.4
