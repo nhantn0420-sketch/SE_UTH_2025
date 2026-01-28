@@ -44,10 +44,32 @@ const ProjectApproval = () => {
     setLoading(true);
     try {
       const data = await projectService.getPendingProjects();
-      setProjects(data.items || data);
+      console.log('Pending projects data:', data);
+      
+      // Handle different response formats
+      if (Array.isArray(data)) {
+        setProjects(data);
+      } else if (data.items && Array.isArray(data.items)) {
+        setProjects(data.items);
+      } else if (data.data && Array.isArray(data.data)) {
+        setProjects(data.data);
+      } else {
+        console.warn('Unexpected data format:', data);
+        setProjects([]);
+      }
     } catch (err) {
       console.error('Failed to fetch projects:', err);
-      toast.error('Không thể tải danh sách đề tài');
+      console.error('Error details:', err.response?.data);
+      
+      // Show specific error message
+      if (err.response?.status === 403) {
+        toast.error('Bạn không có quyền xem danh sách đề tài chờ duyệt');
+      } else if (err.response?.status === 401) {
+        toast.error('Vui lòng đăng nhập lại');
+      } else {
+        toast.error(err.response?.data?.detail || 'Không thể tải danh sách đề tài');
+      }
+      setProjects([]);
     } finally {
       setLoading(false);
     }

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Box,
   Grid,
@@ -12,6 +13,10 @@ import {
   Chip,
   CircularProgress,
   LinearProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -20,6 +25,9 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import groupService from '../../services/groupService';
+import AdvancedSearch from '../../components/Common/AdvancedSearch';
+import FilterPanel from '../../components/Common/FilterPanel';
+import SavedFilters from '../../components/Common/SavedFilters';
 
 const GroupList = () => {
   const navigate = useNavigate();
@@ -27,6 +35,10 @@ const GroupList = () => {
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterValues, setFilterValues] = useState({});
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
 
   useEffect(() => {
     fetchGroups();
@@ -39,22 +51,58 @@ const GroupList = () => {
       setGroups(data.items || data);
     } catch (err) {
       console.error('Failed to fetch groups:', err);
-      // Demo data
-      setGroups([
-        { id: 1, name: 'Nhóm Alpha', project: { title: 'Hệ thống quản lý thư viện' }, progress: 75, members_count: 4 },
-        { id: 2, name: 'Nhóm Beta', project: { title: 'Website bán hàng' }, progress: 50, members_count: 5 },
-        { id: 3, name: 'Nhóm Gamma', project: { title: 'Ứng dụng học từ vựng' }, progress: 30, members_count: 3 },
-      ]);
+      toast.error('Không thể tải danh sách nhóm');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredGroups = groups.filter(
-    (group) =>
+  const handleSearch = (searchData) => {
+    setSearchQuery(searchData.term);
+  };
+
+  const handleFilterChange = (filters) => {
+    setFilterValues(filters);
+  };
+
+  const handleApplySavedFilter = (filters) => {
+    setFilterValues(filters);
+  };
+
+  const filteredGroups = groups.filter((group) => {
+    // Search
+    const matchesSearch =
       group.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      group.project?.title?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      group.project?.title?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Progress filter
+    const matchesProgress = !filterValues.progressRange || (
+      group.progress >= (filterValues.progressRange.min || 0) &&
+      group.progress <= (filterValues.progressRange.max || 100)
+    );
+    
+    // Member count filter
+    const matchesMemberCount = !filterValues.memberCount ||
+      (group.members?.length || 0) >= parseInt(filterValues.memberCount);
+
+    return matchesSearch && matchesProgress && matchesMemberCount;
+  }).sort((a, b) => {
+    let comparison = 0;
+    switch (sortBy) {
+      case 'name':
+        comparison = (a.name || '').localeCompare(b.name || '');
+        break;
+      case 'progress':
+        comparison = (b.progress || 0) - (a.progress || 0);
+        break;
+      case 'members':
+        comparison = (b.members?.length || 0) - (a.members?.length || 0);
+        break;
+      default:
+        comparison = 0;
+    }
+    return sortOrder === 'asc' ? -comparison : comparison;
+  });
 
   const getProgressColor = (progress) => {
     if (progress >= 80) return 'success';
@@ -84,22 +132,88 @@ const GroupList = () => {
         </Box>
       </Box>
 
-      {/* Search */}
-      <TextField
-        fullWidth
-        placeholder="Tìm kiếm theo tên nhóm hoặc đề tài..."
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon />
-            </InputAdornment>
-          ),
-        }}
-        size="small"
-        sx={{ mb: 3 }}
-      />
+      {/* Advanced Search & Filters */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={showFilters ? 9 : 12}>
+          <AdvancedSearch
+            placeholder="Tìm kiếm theo tên nhóm hoặc đề tài..."
+            onSearch={handleSearch}
+            onFilterToggle={() => setShowFilters(!showFilters)}
+            showFilters={showFilters}
+            fields={['name', 'project']}
+            searchDelay={300}
+          />
+          
+          {/* Sort & Saved Filters */}
+          <Box sx={{ display: 'flex', gap: 1, mt: 2, alignItems: 'center' }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Sắp xếp</InputLabel>
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                label="Sắp xếp"
+              >
+                <MenuItem value="name">Tên nhóm</MenuItem>
+                <MenuItem value="progress">Tiến độ</MenuItem>
+                <MenuItem value="members">Số thành viên</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Thứ tự</InputLabel>
+              <Select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                label="Thứ tự"
+              >
+                <MenuItem value="desc">Giảm dần</MenuItem>
+                <MenuItem value="asc">Tăng dần</MenuItem>
+              </Select>
+            </FormControl>
+
+            <SavedFilters
+              currentFilters={filterValues}
+              onApplyFilter={handleApplySavedFilter}
+              storageKey="groupListFilters"
+            />
+
+            <Box sx={{ flexGrow: 1 }} />
+            
+            <Chip
+              label={`${filteredGroups.length} / ${groups.length} nhóm`}
+              color="primary"
+              variant="outlined"
+            />
+          </Box>
+        </Grid>
+
+        {/* Filter Sidebar */}
+        {showFilters && (
+          <Grid item xs={12} md={3}>
+            <FilterPanel
+              filters={[
+                {
+                  key: 'progressRange',
+                  label: 'Tiến độ (%)',
+                  type: 'text',
+                  placeholder: 'Min-Max (VD: 50)',
+                  defaultValue: {},
+                },
+                {
+                  key: 'memberCount',
+                  label: 'Số thành viên tối thiểu',
+                  type: 'text',
+                  placeholder: 'VD: 3',
+                },
+              ]}
+              onFilterChange={handleFilterChange}
+              onClear={() => setFilterValues({})}
+              compact={false}
+              collapsible={false}
+            />
+          </Grid>
+        )}
+      </Grid>
 
       {/* Groups Grid */}
       {filteredGroups.length === 0 ? (

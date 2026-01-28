@@ -5,10 +5,11 @@
 
 const config = {
   // API Configuration
-  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8000/api/v1',
+  API_URL: process.env.REACT_APP_API_URL || 'http://localhost:8001/api/v1',
+  BASE_URL: process.env.REACT_APP_BASE_URL || 'http://localhost:8001',
   
   // WebSocket Configuration
-  WS_URL: process.env.REACT_APP_WS_URL || 'http://localhost:8000',
+  WS_URL: process.env.REACT_APP_WS_URL || 'http://localhost:8001',
   
   // Storage Keys
   ACCESS_TOKEN_KEY: 'collabsphere_access_token',
@@ -18,6 +19,13 @@ const config = {
   // App Settings
   APP_NAME: 'CollabSphere',
   APP_VERSION: '1.0.0',
+  
+  // Helper functions
+  getAvatarUrl: (avatarPath) => {
+    if (!avatarPath) return null;
+    if (avatarPath.startsWith('http')) return avatarPath;
+    return `${process.env.REACT_APP_BASE_URL || 'http://localhost:8001'}${avatarPath}`;
+  },
   
   // Pagination
   DEFAULT_PAGE_SIZE: 10,

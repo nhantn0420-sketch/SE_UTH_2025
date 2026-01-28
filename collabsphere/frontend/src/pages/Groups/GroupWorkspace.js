@@ -23,11 +23,12 @@ import {
   QuestionAnswer as QuestionIcon,
 } from '@mui/icons-material';
 import groupService from '../../services/groupService';
-import TaskBoard from '../../components/Group/TaskBoard';
+import TaskBoard from '../../components/Collaboration/TaskBoard';
 import MilestoneProgress from '../../components/Group/MilestoneProgress';
 import { MeetingScheduler } from '../../components/Meeting';
 import { MilestoneQuestions } from '../../components/Milestone';
 import { useAuth } from '../../context/AuthContext';
+import ResourceManager from '../../components/Common/ResourceManager';
 
 const GroupWorkspace = () => {
   const { id } = useParams();
@@ -112,18 +113,7 @@ const GroupWorkspace = () => {
       {activeTab === 1 && <MilestoneProgress groupId={id} />}
       {activeTab === 2 && <MeetingScheduler groupId={id} />}
       {activeTab === 3 && <MilestoneQuestions groupId={id} userRole={user?.role} />}
-      {activeTab === 4 && (
-        <Card>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Tài liệu nhóm
-            </Typography>
-            <Typography color="text.secondary">
-              Chức năng quản lý tài liệu sẽ được hiển thị ở đây.
-            </Typography>
-          </CardContent>
-        </Card>
-      )}
+      {activeTab === 4 && <ResourceManager groupId={id} canUpload={true} />}
     </Box>
   );
 };

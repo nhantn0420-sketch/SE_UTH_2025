@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Box,
   Typography,
@@ -19,6 +20,7 @@ import {
   Group as GroupIcon,
   Person as PersonIcon,
   School as SchoolIcon,
+  Folder as FolderIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import classService from '../../services/classService';
@@ -40,39 +42,7 @@ const ClassList = () => {
       setClasses(data.items || data || []);
     } catch (err) {
       console.error('Failed to fetch classes:', err);
-      // Demo data
-      setClasses([
-        {
-          id: 1,
-          code: 'CS101-01',
-          name: 'Lập trình cơ bản - Nhóm 1',
-          subject: { code: 'CS101', name: 'Lập trình cơ bản' },
-          lecturer: { full_name: 'Nguyễn Văn A' },
-          student_count: 35,
-          semester: 'HK1 2024-2025',
-          status: 'active',
-        },
-        {
-          id: 2,
-          code: 'CS201-01',
-          name: 'Cấu trúc dữ liệu - Nhóm 1',
-          subject: { code: 'CS201', name: 'Cấu trúc dữ liệu' },
-          lecturer: { full_name: 'Trần Thị B' },
-          student_count: 40,
-          semester: 'HK1 2024-2025',
-          status: 'active',
-        },
-        {
-          id: 3,
-          code: 'CS301-01',
-          name: 'Công nghệ phần mềm - Nhóm 1',
-          subject: { code: 'CS301', name: 'Công nghệ phần mềm' },
-          lecturer: null,
-          student_count: 30,
-          semester: 'HK1 2024-2025',
-          status: 'pending',
-        },
-      ]);
+      toast.error('Không thể tải danh sách lớp học');
     } finally {
       setLoading(false);
     }
@@ -136,14 +106,21 @@ const ClassList = () => {
     {
       field: 'actions',
       headerName: 'Thao tác',
-      width: 80,
+      width: 120,
       sortable: false,
       renderCell: (params) => (
-        <Tooltip title="Xem chi tiết">
-          <IconButton size="small" onClick={() => navigate(`/groups?classId=${params.row.id}`)}>
-            <ViewIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <Box>
+          <Tooltip title="Xem nhóm">
+            <IconButton size="small" onClick={() => navigate(`/groups?classId=${params.row.id}`)}>
+              <ViewIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Tài nguyên">
+            <IconButton size="small" onClick={() => navigate(`/classes/${params.row.id}/resources`)}>
+              <FolderIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
       ),
     },
   ];

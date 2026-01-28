@@ -15,6 +15,7 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import subjectService from '../../services/subjectService';
 import classService from '../../services/classService';
 
@@ -67,26 +68,11 @@ const StaffDashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const [subjectsRes, classesRes] = await Promise.all([
-        subjectService.getSubjects(),
-        classService.getClasses(),
-      ]);
-      
-      setStats({
-        subjects: subjectsRes.items?.length || subjectsRes.length || 0,
-        classes: classesRes.items?.length || classesRes.length || 0,
-        lecturers: 0,
-        students: 0,
-      });
+      const data = await subjectService.getStatistics();
+      setStats(data);
     } catch (err) {
       console.error('Failed to fetch stats:', err);
-      // Set demo data
-      setStats({
-        subjects: 15,
-        classes: 25,
-        lecturers: 20,
-        students: 350,
-      });
+      toast.error('Không thể tải thống kê');
     } finally {
       setLoading(false);
     }

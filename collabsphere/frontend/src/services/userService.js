@@ -37,6 +37,12 @@ const userService = {
     return response.data;
   },
 
+  // Get user statistics (Admin only)
+  async getStatistics() {
+    const response = await api.get('/users/statistics');
+    return response.data;
+  },
+
   // Import users from file (Staff only)
   async importUsers(file, role) {
     const formData = new FormData();

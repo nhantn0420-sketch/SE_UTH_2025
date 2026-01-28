@@ -27,6 +27,7 @@ import {
   RateReview as ReviewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import groupService from '../../services/groupService';
 import { PeerReviewView } from '../../components/Evaluation';
 
@@ -34,6 +35,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
   const [myGroup, setMyGroup] = useState(null);
   const [tasks, setTasks] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
 
@@ -43,8 +45,12 @@ const StudentDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const groupRes = await groupService.getMyGroup();
+      const [groupRes, statsRes] = await Promise.all([
+        groupService.getMyGroup(),
+        groupService.getStudentStatistics(),
+      ]);
       setMyGroup(groupRes);
+      setStats(statsRes);
       
       if (groupRes?.id) {
         const tasksRes = await groupService.getTasks(groupRes.id);
@@ -52,23 +58,7 @@ const StudentDashboard = () => {
       }
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      // Demo data
-      setMyGroup({
-        id: 1,
-        name: 'Nhóm Alpha',
-        project: { title: 'Hệ thống quản lý thư viện' },
-        progress: 65,
-        members: [
-          { id: 1, user: { full_name: 'Nguyễn Văn A' }, role: 'leader' },
-          { id: 2, user: { full_name: 'Trần Thị B' }, role: 'member' },
-          { id: 3, user: { full_name: 'Lê Văn C' }, role: 'member' },
-        ],
-      });
-      setTasks([
-        { id: 1, title: 'Thiết kế giao diện đăng nhập', status: 'completed', due_date: '2024-01-20' },
-        { id: 2, title: 'Phát triển API xác thực', status: 'in_progress', due_date: '2024-01-25' },
-        { id: 3, title: 'Viết test cases', status: 'todo', due_date: '2024-01-30' },
-      ]);
+      toast.error('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
     }

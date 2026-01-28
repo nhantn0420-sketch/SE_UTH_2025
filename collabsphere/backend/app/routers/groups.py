@@ -16,7 +16,7 @@ from app.models.project import Project, ProjectMilestone, MilestoneQuestion
 from app.models.group import (
     Group, GroupCreate, GroupUpdate, GroupResponse, GroupRole,
     GroupMember, GroupMilestone, Checkpoint, CheckpointStatus,
-    CheckpointSubmission, CheckpointAssignment, Task
+    CheckpointSubmission, CheckpointAssignment, Task, TaskCreate, TaskUpdate
 )
 from app.schemas.common import ResponseMessage
 from app.utils.dependencies import (
@@ -26,6 +26,81 @@ from app.utils.dependencies import (
 )
 
 router = APIRouter()
+
+
+# ==================== STATISTICS ENDPOINT ====================
+
+@router.get("/statistics/student")
+async def get_student_statistics(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_student)
+):
+    """
+    Student: Get my group and task statistics.
+    """
+    try:
+        # My groups
+        my_groups = session.exec(
+            select(func.count(GroupMember.id)).where(GroupMember.user_id == current_user.id)
+        ).one()
+        
+        # Get group IDs
+        group_ids = session.exec(
+            select(GroupMember.group_id).where(GroupMember.user_id == current_user.id)
+        ).all()
+        
+        # My tasks statistics
+        total_tasks = 0
+        completed_tasks = 0
+        pending_tasks = 0
+        in_progress_tasks = 0
+        
+        if group_ids and len(group_ids) > 0:
+            try:
+                total_tasks = session.exec(
+                    select(func.count(Task.id)).where(
+                        Task.group_id.in_(group_ids),
+                        Task.assignee_id == current_user.id
+                    )
+                ).one()
+                
+                completed_tasks = session.exec(
+                    select(func.count(Task.id)).where(
+                        Task.group_id.in_(group_ids),
+                        Task.assignee_id == current_user.id,
+                        Task.status == 'completed'
+                    )
+                ).one()
+                
+                in_progress_tasks = session.exec(
+                    select(func.count(Task.id)).where(
+                        Task.group_id.in_(group_ids),
+                        Task.assignee_id == current_user.id,
+                        Task.status == 'in_progress'
+                    )
+                ).one()
+                
+                pending_tasks = session.exec(
+                    select(func.count(Task.id)).where(
+                        Task.group_id.in_(group_ids),
+                        Task.assignee_id == current_user.id,
+                        Task.status == 'todo'
+                    )
+                ).one()
+            except Exception as e:
+                # Table might not exist or other DB error
+                print(f"Warning: Could not query tasks - {e}")
+        
+        return {
+            "my_groups": my_groups,
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "in_progress_tasks": in_progress_tasks,
+            "pending_tasks": pending_tasks
+        }
+    except Exception as e:
+        print(f"Error in get_student_statistics: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ==================== GROUP MANAGEMENT ====================
@@ -95,6 +170,54 @@ async def get_groups(
         ))
     
     return result
+
+
+@router.get("/my", response_model=Optional[GroupResponse])
+async def get_my_group(
+    class_project_id: Optional[int] = Query(None),
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_student)
+):
+    """
+    Student: Get my group (first group if multiple).
+    Optionally filter by class_project_id.
+    """
+    statement = select(Group).join(
+        GroupMember, GroupMember.group_id == Group.id
+    ).where(GroupMember.user_id == current_user.id)
+    
+    if class_project_id:
+        statement = statement.where(Group.class_project_id == class_project_id)
+    
+    group = session.exec(statement).first()
+    
+    if not group:
+        return None
+    
+    member_count = session.exec(
+        select(func.count(GroupMember.id)).where(GroupMember.group_id == group.id)
+    ).one()
+    
+    # Calculate progress
+    progress = 0.0
+    if group.project_id:
+        total_milestones = session.exec(
+            select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == group.project_id)
+        ).one()
+        completed = session.exec(
+            select(func.count(GroupMilestone.id)).where(
+                GroupMilestone.group_id == group.id,
+                GroupMilestone.is_completed == True
+            )
+        ).one()
+        if total_milestones > 0:
+            progress = (completed / total_milestones) * 100
+    
+    return GroupResponse(
+        **group.dict(),
+        member_count=member_count,
+        progress_percentage=progress
+    )
 
 
 @router.get("/{group_id}", response_model=GroupResponse)
@@ -1000,13 +1123,7 @@ async def get_group_tasks(
 @router.post("/{group_id}/tasks")
 async def create_task(
     group_id: int,
-    title: str,
-    description: Optional[str] = None,
-    card_id: Optional[int] = None,  # UC039: Link task to card
-    priority: str = "medium",
-    assigned_to: Optional[int] = None,
-    due_date: Optional[datetime] = None,
-    parent_task_id: Optional[int] = None,
+    task_data: TaskCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -1027,21 +1144,15 @@ async def create_task(
         raise HTTPException(status_code=403, detail="Not a member of this group")
     
     # Verify card exists if provided
-    if card_id:
+    if task_data.card_id:
         from app.models.group import WorkspaceCard
-        card = session.get(WorkspaceCard, card_id)
+        card = session.get(WorkspaceCard, task_data.card_id)
         if not card or card.group_id != group_id:
             raise HTTPException(status_code=404, detail="Card not found or doesn't belong to this group")
     
     task = Task(
         group_id=group_id,
-        card_id=card_id,  # UC039: Link to card
-        title=title,
-        description=description,
-        priority=priority,
-        assigned_to=assigned_to,
-        due_date=due_date,
-        parent_task_id=parent_task_id,
+        **task_data.dict(),
         created_by=current_user.id
     )
     
@@ -1056,12 +1167,7 @@ async def create_task(
 async def update_task(
     group_id: int,
     task_id: int,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    status: Optional[str] = None,
-    priority: Optional[str] = None,
-    assigned_to: Optional[int] = None,
-    due_date: Optional[datetime] = None,
+    task_data: TaskUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -1072,18 +1178,10 @@ async def update_task(
     if not task or task.group_id != group_id:
         raise HTTPException(status_code=404, detail="Task not found")
     
-    if title:
-        task.title = title
-    if description is not None:
-        task.description = description
-    if status:
-        task.status = status
-    if priority:
-        task.priority = priority
-    if assigned_to is not None:
-        task.assigned_to = assigned_to
-    if due_date is not None:
-        task.due_date = due_date
+    # Update fields from TaskUpdate schema
+    update_data = task_data.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(task, field, value)
     
     task.updated_at = datetime.utcnow()
     session.add(task)

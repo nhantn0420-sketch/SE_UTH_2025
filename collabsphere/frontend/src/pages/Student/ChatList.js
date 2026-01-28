@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   Box,
   Typography,
@@ -42,32 +43,7 @@ const ChatList = () => {
       setGroups(groupList);
     } catch (err) {
       console.error('Failed to fetch groups:', err);
-      // Demo data
-      setGroups([
-        { 
-          id: 1, 
-          name: 'Nhóm 1 - Quản lý thư viện', 
-          project: { title: 'Hệ thống quản lý thư viện' },
-          members: [
-            { user: { full_name: 'Nguyễn Văn A', avatar_url: null } },
-            { user: { full_name: 'Trần Thị B', avatar_url: null } },
-            { user: { full_name: 'Lê Văn C', avatar_url: null } },
-          ],
-          unread_count: 3,
-          last_message: { content: 'Chào mọi người!', created_at: new Date().toISOString() }
-        },
-        { 
-          id: 2, 
-          name: 'Nhóm 2 - App từ vựng', 
-          project: { title: 'Ứng dụng học tiếng Anh' },
-          members: [
-            { user: { full_name: 'Phạm Văn D', avatar_url: null } },
-            { user: { full_name: 'Hoàng Thị E', avatar_url: null } },
-          ],
-          unread_count: 0,
-          last_message: { content: 'OK, mình đã cập nhật rồi', created_at: new Date().toISOString() }
-        },
-      ]);
+      toast.error('Không thể tải danh sách nhóm');
     } finally {
       setLoading(false);
     }

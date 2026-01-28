@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import {
   Box,
   Card,
@@ -48,12 +49,7 @@ const Chat = () => {
       setMessages(data.items || data);
     } catch (err) {
       console.error('Failed to fetch messages:', err);
-      // Demo data
-      setMessages([
-        { id: 1, content: 'Chào mọi người!', sender: { full_name: 'Nguyễn Văn A' }, created_at: new Date().toISOString() },
-        { id: 2, content: 'Hi, bắt đầu họp nhé', sender: { full_name: 'Trần Thị B' }, created_at: new Date().toISOString() },
-        { id: 3, content: 'OK, mình đã chuẩn bị tài liệu rồi', sender: { full_name: 'Lê Văn C' }, created_at: new Date().toISOString() },
-      ]);
+      toast.error('Không thể tải tin nhắn');
     } finally {
       setLoading(false);
     }

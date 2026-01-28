@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 import {
   Box,
   Card,
@@ -26,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import reportService from '../../services/reportService';
 
 const SystemReports = () => {
   const [reports, setReports] = useState([]);
@@ -40,39 +42,11 @@ const SystemReports = () => {
   const fetchReports = async () => {
     setLoading(true);
     try {
-      // In real app, fetch from API
-      // const data = await reportService.getSystemReports();
-      
-      // Demo data
-      setReports([
-        {
-          id: 1,
-          subject: 'Lỗi không upload được file',
-          content: 'Tôi không thể upload file lớn hơn 10MB',
-          user: { full_name: 'Nguyễn Văn A', email: 'nva@example.com', role: 'student' },
-          status: 'pending',
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 2,
-          subject: 'Không nhận được email thông báo',
-          content: 'Tôi đã bật thông báo nhưng không nhận được email',
-          user: { full_name: 'Trần Thị B', email: 'ttb@example.com', role: 'lecturer' },
-          status: 'resolved',
-          created_at: new Date(Date.now() - 172800000).toISOString(),
-          resolved_at: new Date(Date.now() - 86400000).toISOString(),
-        },
-        {
-          id: 3,
-          subject: 'Video call bị lag',
-          content: 'Khi họp video thường xuyên bị giật, lag',
-          user: { full_name: 'Lê Văn C', email: 'lvc@example.com', role: 'student' },
-          status: 'pending',
-          created_at: new Date().toISOString(),
-        },
-      ]);
+      const data = await reportService.getSystemReports();
+      setReports(data.items || data || []);
     } catch (err) {
       console.error('Failed to fetch reports:', err);
+      toast.error('Không thể tải danh sách báo cáo');
     } finally {
       setLoading(false);
     }

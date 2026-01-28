@@ -1,0 +1,6 @@
+# CollabSphere Automation Testing Requirements
+selenium==4.16.0
+webdriver-manager==4.0.1
+Pillow==10.1.0
+requests==2.31.0
+python-dotenv==1.0.0

@@ -25,6 +25,8 @@ import {
   Report as ReportIcon,
   LibraryBooks as LibraryBooksIcon,
   AssignmentTurnedIn as AssignmentTurnedInIcon,
+  TaskAlt as TaskIcon,
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 
@@ -62,6 +64,8 @@ const Sidebar = ({ open, onClose, width, isMobile }) => {
           { text: 'Dashboard', icon: <DashboardIcon />, path: '/lecturer' },
           { text: 'Đề tài', icon: <AssignmentIcon />, path: '/projects' },
           { text: 'Nhóm sinh viên', icon: <GroupsIcon />, path: '/groups' },
+          { text: 'Quản lý công việc', icon: <TaskIcon />, path: '/tasks' },
+          { text: 'Đóng góp thành viên', icon: <AnalyticsIcon />, path: '/contributions' },
           { text: 'Đánh giá', icon: <AssessmentIcon />, path: '/evaluations' },
         ];
       case 'student':

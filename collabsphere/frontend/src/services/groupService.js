@@ -1,6 +1,12 @@
 import api from './api';
 
 const groupService = {
+  // Get student statistics
+  async getStudentStatistics() {
+    const response = await api.get('/groups/statistics/student');
+    return response.data;
+  },
+
   // Get all groups
   async getGroups(params = {}) {
     const response = await api.get('/groups', { params });
@@ -123,9 +129,9 @@ const groupService = {
     return response.data;
   },
 
-  // Update task (PATCH method, query params for fields)
+  // Update task (PATCH method with body)
   async updateTask(groupId, taskId, taskData) {
-    const response = await api.patch(`/groups/${groupId}/tasks/${taskId}`, null, { params: taskData });
+    const response = await api.patch(`/groups/${groupId}/tasks/${taskId}`, taskData);
     return response.data;
   },
 

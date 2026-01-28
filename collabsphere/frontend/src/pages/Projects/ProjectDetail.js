@@ -108,7 +108,7 @@ const ProjectDetail = () => {
     );
   }
 
-  const isOwner = project.lecturer_id === user?.id;
+  const isOwner = project.creator_id === user?.id;
   const canHeadEdit = isHead && project.status === 'approved';
 
   return (
@@ -220,7 +220,7 @@ const ProjectDetail = () => {
                       <ListItemText
                         primary={
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Chip label={`Tuần ${milestone.week}`} size="small" />
+                            <Chip label={`Tuần ${milestone.week_number || 'undefined'}`} size="small" />
                             <Typography>{milestone.title}</Typography>
                           </Box>
                         }
@@ -246,13 +246,13 @@ const ProjectDetail = () => {
                   <Typography variant="caption" color="text.secondary">
                     Giảng viên
                   </Typography>
-                  <Typography>{project.lecturer?.full_name || 'N/A'}</Typography>
+                  <Typography>N/A</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">
                     Số thành viên tối đa
                   </Typography>
-                  <Typography>{project.max_members || 'N/A'} người</Typography>
+                  <Typography>{project.max_group_size || 'N/A'} người</Typography>
                 </Box>
                 <Box>
                   <Typography variant="caption" color="text.secondary">

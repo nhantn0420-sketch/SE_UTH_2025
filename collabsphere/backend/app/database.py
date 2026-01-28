@@ -25,6 +25,9 @@ else:
 
 def create_db_and_tables():
     """Create all database tables"""
+    # Import all models to ensure they are registered
+    from app.models import user, subject, academic, project, group, notification, communication, evaluation, resource, report
+    
     SQLModel.metadata.create_all(engine)
 
 

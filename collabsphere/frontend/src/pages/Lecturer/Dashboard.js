@@ -23,6 +23,7 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import projectService from '../../services/projectService';
 import groupService from '../../services/groupService';
 import config from '../../config';
@@ -64,6 +65,7 @@ const LecturerDashboard = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -72,24 +74,17 @@ const LecturerDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const [projectsRes, groupsRes] = await Promise.all([
+      const [projectsRes, groupsRes, statsRes] = await Promise.all([
         projectService.getMyProjects(),
         groupService.getGroups(),
+        projectService.getLecturerStatistics(),
       ]);
       setProjects(projectsRes.items || projectsRes);
       setGroups(groupsRes.items || groupsRes);
+      setStats(statsRes);
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      // Demo data
-      setProjects([
-        { id: 1, title: 'Hệ thống quản lý thư viện', status: 'approved' },
-        { id: 2, title: 'Ứng dụng học từ vựng', status: 'pending' },
-        { id: 3, title: 'Website bán hàng', status: 'active' },
-      ]);
-      setGroups([
-        { id: 1, name: 'Nhóm 1', project: { title: 'Hệ thống quản lý thư viện' }, progress: 60 },
-        { id: 2, name: 'Nhóm 2', project: { title: 'Website bán hàng' }, progress: 40 },
-      ]);
+      toast.error('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
     }
@@ -102,12 +97,6 @@ const LecturerDashboard = () => {
       </Box>
     );
   }
-
-  const stats = {
-    projects: projects.length,
-    approved: projects.filter(p => p.status === 'approved' || p.status === 'active').length,
-    groups: groups.length,
-  };
 
   return (
     <Box>
@@ -134,7 +123,7 @@ const LecturerDashboard = () => {
         <Grid item xs={12} sm={4}>
           <StatCard
             title="Đề tài của tôi"
-            value={stats.projects}
+            value={stats?.total_projects || 0}
             icon={<AssignmentIcon />}
             color="primary"
             onClick={() => navigate('/projects')}
@@ -143,7 +132,7 @@ const LecturerDashboard = () => {
         <Grid item xs={12} sm={4}>
           <StatCard
             title="Đề tài đã duyệt"
-            value={stats.approved}
+            value={stats?.approved_projects || 0}
             icon={<ClassIcon />}
             color="success"
           />
@@ -151,7 +140,7 @@ const LecturerDashboard = () => {
         <Grid item xs={12} sm={4}>
           <StatCard
             title="Nhóm hướng dẫn"
-            value={stats.groups}
+            value={stats?.groups || 0}
             icon={<GroupsIcon />}
             color="secondary"
             onClick={() => navigate('/groups')}

@@ -1,6 +1,12 @@
 import api from './api';
 
 const subjectService = {
+  // Get statistics (Staff only)
+  async getStatistics() {
+    const response = await api.get('/subjects/statistics');
+    return response.data;
+  },
+
   // Get all subjects
   async getSubjects(params = {}) {
     const response = await api.get('/subjects', { params });

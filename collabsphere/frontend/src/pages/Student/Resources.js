@@ -91,12 +91,7 @@ const Resources = () => {
       }
     } catch (err) {
       console.error('Failed to fetch groups:', err);
-      // Demo data
-      setMyGroups([
-        { id: 1, name: 'Nhóm 1 - Quản lý thư viện', project: { title: 'Hệ thống thư viện' } },
-        { id: 2, name: 'Nhóm 2 - App học từ vựng', project: { title: 'Ứng dụng học tiếng Anh' } },
-      ]);
-      setSelectedGroup({ id: 1, name: 'Nhóm 1 - Quản lý thư viện' });
+      toast.error('Không thể tải danh sách nhóm');
     } finally {
       setLoading(false);
     }
@@ -109,13 +104,7 @@ const Resources = () => {
       setResources(data.items || data || []);
     } catch (err) {
       console.error('Failed to fetch resources:', err);
-      // Demo data
-      setResources([
-        { id: 1, name: 'Báo cáo tiến độ tuần 1.pdf', type: 'pdf', size: '2.5 MB', uploaded_by: { full_name: 'Nguyễn Văn A' }, created_at: new Date().toISOString() },
-        { id: 2, name: 'Sơ đồ ERD.png', type: 'image', size: '1.2 MB', uploaded_by: { full_name: 'Trần Thị B' }, created_at: new Date().toISOString() },
-        { id: 3, name: 'Source code v1.zip', type: 'code', size: '5.8 MB', uploaded_by: { full_name: 'Lê Văn C' }, created_at: new Date().toISOString() },
-        { id: 4, name: 'Tài liệu hướng dẫn.docx', type: 'doc', size: '500 KB', uploaded_by: { full_name: 'Nguyễn Văn A' }, created_at: new Date().toISOString() },
-      ]);
+      toast.error('Không thể tải tài nguyên nhóm');
     }
   };
 

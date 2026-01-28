@@ -66,31 +66,7 @@ const CurriculumManagement = () => {
       setSubjects(subjectsData.items || subjectsData || []);
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      // Demo data
-      setCurricula([
-        {
-          id: 1,
-          title: 'Giáo trình lập trình Python cơ bản',
-          subject: { code: 'CS101', name: 'Lập trình cơ bản' },
-          description: 'Giáo trình dành cho sinh viên năm nhất',
-          learning_outcomes: JSON.stringify(['Hiểu cú pháp Python', 'Viết được chương trình đơn giản']),
-          duration_weeks: 15,
-          created_at: new Date().toISOString(),
-        },
-        {
-          id: 2,
-          title: 'Giáo trình cấu trúc dữ liệu và giải thuật',
-          subject: { code: 'CS201', name: 'Cấu trúc dữ liệu' },
-          description: 'Giáo trình nâng cao về CTDL',
-          learning_outcomes: JSON.stringify(['Nắm vững các cấu trúc dữ liệu cơ bản', 'Phân tích độ phức tạp']),
-          duration_weeks: 15,
-          created_at: new Date().toISOString(),
-        },
-      ]);
-      setSubjects([
-        { id: 1, code: 'CS101', name: 'Lập trình cơ bản' },
-        { id: 2, code: 'CS201', name: 'Cấu trúc dữ liệu' },
-      ]);
+      toast.error('Không thể tải dữ liệu giáo trình');
     } finally {
       setLoading(false);
     }

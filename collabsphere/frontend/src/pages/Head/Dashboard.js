@@ -23,6 +23,7 @@ import {
   Visibility as ViewIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import projectService from '../../services/projectService';
 
 const StatCard = ({ title, value, icon, color }) => (
@@ -71,25 +72,15 @@ const HeadDashboard = () => {
 
   const fetchData = async () => {
     try {
-      const projects = await projectService.getPendingProjects();
+      const [projects, stats] = await Promise.all([
+        projectService.getPendingProjects(),
+        projectService.getHeadStatistics(),
+      ]);
       setPendingProjects(projects.items || projects);
-      
-      // Calculate stats
-      const allProjects = await projectService.getProjects();
-      const projectList = allProjects.items || allProjects;
-      setStats({
-        pending: projectList.filter(p => p.status === 'pending').length,
-        approved: projectList.filter(p => p.status === 'approved').length,
-        rejected: projectList.filter(p => p.status === 'rejected').length,
-      });
+      setStats(stats);
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      // Demo data
-      setPendingProjects([
-        { id: 1, title: 'Hệ thống quản lý thư viện', lecturer: { full_name: 'Nguyễn Văn A' }, created_at: new Date() },
-        { id: 2, title: 'Ứng dụng học từ vựng', lecturer: { full_name: 'Trần Thị B' }, created_at: new Date() },
-      ]);
-      setStats({ pending: 5, approved: 20, rejected: 3 });
+      toast.error('Không thể tải dữ liệu');
     } finally {
       setLoading(false);
     }

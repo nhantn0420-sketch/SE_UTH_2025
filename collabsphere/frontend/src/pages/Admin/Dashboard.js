@@ -26,9 +26,18 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { toast } from 'react-toastify';
 import userService from '../../services/userService';
 
+// Modern gradient colors for better visualization
 const COLORS = ['#4A90D9', '#5C6BC0', '#4CAF50', '#FF9800', '#F44336'];
+const ROLE_COLORS = {
+  'Admin': '#4A90D9',
+  'Nhân viên': '#5C6BC0', 
+  'Trưởng BM': '#4CAF50',
+  'Giảng viên': '#FF9800',
+  'Sinh viên': '#F44336',
+};
 
 const StatCard = ({ title, value, icon, color }) => (
   <Card>
@@ -74,19 +83,7 @@ const AdminDashboard = () => {
       setStats(data);
     } catch (err) {
       console.error('Failed to fetch statistics:', err);
-      // Set mock data for demonstration
-      setStats({
-        total_users: 150,
-        by_role: {
-          admin: 2,
-          staff: 5,
-          head: 3,
-          lecturer: 20,
-          student: 120,
-        },
-        active_users: 140,
-        inactive_users: 10,
-      });
+      toast.error('Không thể tải thống kê');
     } finally {
       setLoading(false);
     }
@@ -168,28 +165,51 @@ const AdminDashboard = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom fontWeight="600">
                 Phân bố người dùng theo vai trò
               </Typography>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 340, mt: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
                       data={roleData}
                       cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                      outerRadius={100}
+                      cy="45%"
+                      labelLine={true}
+                      label={({ name, value, percent }) => 
+                        `${name}: ${value} (${(percent * 100).toFixed(1)}%)`
+                      }
+                      outerRadius={95}
+                      innerRadius={45}
                       fill="#8884d8"
                       dataKey="value"
+                      paddingAngle={3}
+                      animationBegin={0}
+                      animationDuration={800}
                     >
                       {roleData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={ROLE_COLORS[entry.name] || COLORS[index % COLORS.length]}
+                          style={{ cursor: 'pointer' }}
+                        />
                       ))}
                     </Pie>
-                    <Tooltip />
-                    <Legend />
+                    <Tooltip 
+                      formatter={(value) => [`${value} người dùng`, 'Số lượng']}
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: '8px',
+                        border: '1px solid #e0e0e0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                    />
+                    <Legend 
+                      verticalAlign="bottom" 
+                      height={36}
+                      iconType="circle"
+                      formatter={(value, entry) => `${value}: ${entry.payload.value}`}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </Box>
@@ -200,17 +220,51 @@ const AdminDashboard = () => {
         <Grid item xs={12} md={6}>
           <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
+              <Typography variant="h6" gutterBottom fontWeight="600">
                 Số lượng người dùng theo vai trò
               </Typography>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 340, mt: 2 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={roleData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis />
-                    <Tooltip />
-                    <Bar dataKey="value" fill="#4A90D9" radius={[4, 4, 0, 0]} />
+                  <BarChart 
+                    data={roleData}
+                    margin={{ top: 10, right: 20, left: 0, bottom: 25 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-15}
+                      textAnchor="end"
+                      height={60}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      label={{ value: 'Số lượng', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
+                    />
+                    <Tooltip 
+                      formatter={(value) => [`${value} người`, 'Số lượng']}
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        borderRadius: '8px',
+                        border: '1px solid #e0e0e0',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                      }}
+                      cursor={{ fill: 'rgba(74, 144, 217, 0.1)' }}
+                    />
+                    <Bar 
+                      dataKey="value" 
+                      radius={[8, 8, 0, 0]}
+                      animationBegin={0}
+                      animationDuration={800}
+                    >
+                      {roleData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={ROLE_COLORS[entry.name] || COLORS[index % COLORS.length]}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </Box>

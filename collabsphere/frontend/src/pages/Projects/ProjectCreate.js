@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import {
   Box,
   Card,
@@ -29,8 +29,10 @@ const steps = ['Thông tin cơ bản', 'Yêu cầu & Kết quả', 'Milestones']
 
 const ProjectCreate = () => {
   const navigate = useNavigate();
+  const { id } = useParams(); // Get project ID for edit mode
+  const isEditMode = Boolean(id);
   const [activeStep, setActiveStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(isEditMode); // Load project data in edit mode
   const [generatingMilestones, setGeneratingMilestones] = useState(false);
   const [projectData, setProjectData] = useState({});
   const [milestones, setMilestones] = useState([]);
@@ -40,7 +42,46 @@ const ProjectCreate = () => {
     handleSubmit,
     formState: { errors },
     getValues,
+    setValue,
   } = useForm();
+
+  // Load project data in edit mode
+  useEffect(() => {
+    if (isEditMode) {
+      loadProjectData();
+    }
+  }, [id]);
+
+  const loadProjectData = async () => {
+    try {
+      const project = await projectService.getProjectById(id);
+      setProjectData(project);
+      
+      // Set form values
+      setValue('title', project.title);
+      setValue('description', project.description);
+      setValue('goals', project.goals);
+      setValue('requirements', project.requirements);
+      setValue('duration_weeks', project.duration_weeks);
+      setValue('max_group_size', project.max_group_size);
+      setValue('min_group_size', project.min_group_size);
+      
+      // Load milestones
+      const milestonesData = await projectService.getMilestones(id);
+      const loadedMilestones = (milestonesData.items || milestonesData).map(m => ({
+        title: m.title,
+        description: m.description || '',
+        week_number: m.week_number
+      }));
+      setMilestones(loadedMilestones);
+      
+      setLoading(false);
+    } catch (err) {
+      console.error('Failed to load project:', err);
+      toast.error('Không thể tải thông tin đề tài');
+      navigate('/projects');
+    }
+  };
 
   const handleNext = () => {
     const values = getValues();
@@ -99,33 +140,42 @@ const ProjectCreate = () => {
       goals: projectData.goals || values.goals || null,
       requirements: projectData.requirements || values.requirements || null,
       duration_weeks: parseInt(projectData.duration_weeks || values.duration_weeks || 12),
-      max_group_size: parseInt(projectData.max_members || values.max_members || 5),
-      min_group_size: parseInt(projectData.min_members || values.min_members || 3),
+      max_group_size: parseInt(projectData.max_group_size || values.max_group_size || 5),
+      min_group_size: parseInt(projectData.min_group_size || values.min_group_size || 3),
       curriculum_id: projectData.curriculum_id || values.curriculum_id || null
     };
 
     setLoading(true);
     try {
-      // Step 1: Create project first
-      const project = await projectService.createProject(finalData);
+      let project;
       
-      // Step 2: If milestones exist, add them one by one
-      if (milestones && milestones.length > 0) {
-        for (const milestone of milestones) {
-          await projectService.createMilestone(project.id, {
-            title: milestone.title,
-            description: milestone.description || '',
-            week_number: parseInt(milestone.week) || 1,
-            deliverables: null
-          });
+      if (isEditMode) {
+        // Update existing project
+        project = await projectService.updateProject(id, finalData);
+        toast.success('Cập nhật đề tài thành công');
+      } else {
+        // Create new project
+        project = await projectService.createProject(finalData);
+        
+        // Add milestones for new project
+        if (milestones && milestones.length > 0) {
+          for (const milestone of milestones) {
+            await projectService.createMilestone(project.id, {
+              title: milestone.title,
+              description: milestone.description || '',
+              week_number: parseInt(milestone.week_number || milestone.week) || 1,
+              deliverables: null
+            });
+          }
         }
+        
+        toast.success('Tạo đề tài thành công');
       }
       
-      toast.success('Tạo đề tài thành công');
-      navigate(`/projects/${project.id}`);
+      navigate(`/projects/${project.id || id}`);
     } catch (err) {
-      console.error('Create project error:', err);
-      toast.error(err.response?.data?.detail || 'Tạo đề tài thất bại');
+      console.error('Submit project error:', err);
+      toast.error(err.response?.data?.detail || (isEditMode ? 'Cập nhật đề tài thất bại' : 'Tạo đề tài thất bại'));
     } finally {
       setLoading(false);
     }
@@ -161,7 +211,7 @@ const ProjectCreate = () => {
                 fullWidth
                 type="number"
                 label="Số thành viên tối đa"
-                {...register('max_members')}
+                {...register('max_group_size')}
                 defaultValue={5}
                 inputProps={{ min: 2, max: 10 }}
               />
@@ -171,7 +221,7 @@ const ProjectCreate = () => {
                 fullWidth
                 type="number"
                 label="Số thành viên tối thiểu"
-                {...register('min_members')}
+                {...register('min_group_size')}
                 defaultValue={3}
                 inputProps={{ min: 1, max: 10 }}
               />
@@ -315,10 +365,10 @@ const ProjectCreate = () => {
   return (
     <Box>
       <Typography variant="h4" fontWeight="bold" gutterBottom>
-        Tạo đề tài mới
+        {isEditMode ? 'Chỉnh sửa đề tài' : 'Tạo đề tài mới'}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-        Điền thông tin để tạo đề tài cho sinh viên thực hiện
+        {isEditMode ? 'Cập nhật thông tin đề tài' : 'Điền thông tin để tạo đề tài cho sinh viên thực hiện'}
       </Typography>
 
       <Card>
@@ -354,7 +404,7 @@ const ProjectCreate = () => {
                     variant="contained"
                     disabled={loading}
                   >
-                    {loading ? <CircularProgress size={24} /> : 'Tạo đề tài'}
+                    {loading ? <CircularProgress size={24} /> : (isEditMode ? 'Cập nhật đề tài' : 'Tạo đề tài')}
                   </Button>
                 ) : (
                   <Button

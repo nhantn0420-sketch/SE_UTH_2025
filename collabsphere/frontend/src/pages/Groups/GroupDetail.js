@@ -28,11 +28,13 @@ import {
   Schedule as ScheduleIcon,
   PlayArrow as PlayIcon,
   BarChart as ChartIcon,
+  AssignmentTurnedIn as TaskIcon,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import { useAuth } from '../../context/AuthContext';
 import groupService from '../../services/groupService';
-import { ContributionChart } from '../../components/Group';
+import TaskBoard from '../../components/Collaboration/TaskBoard';
+import ContributionTracker from '../../components/Collaboration/ContributionTracker';
 
 const GroupDetail = () => {
   const { id } = useParams();
@@ -65,28 +67,7 @@ const GroupDetail = () => {
       setTasks(tasksData.items || tasksData);
     } catch (err) {
       console.error('Failed to fetch group data:', err);
-      // Demo data
-      setGroup({
-        id: 1,
-        name: 'Nhóm Alpha',
-        project: { title: 'Hệ thống quản lý thư viện', description: 'Xây dựng hệ thống quản lý thư viện hoàn chỉnh' },
-        progress: 65,
-      });
-      setMembers([
-        { id: 1, user: { full_name: 'Nguyễn Văn A', email: 'a@email.com' }, role: 'leader' },
-        { id: 2, user: { full_name: 'Trần Thị B', email: 'b@email.com' }, role: 'member' },
-        { id: 3, user: { full_name: 'Lê Văn C', email: 'c@email.com' }, role: 'member' },
-      ]);
-      setMilestones([
-        { id: 1, title: 'Phân tích yêu cầu', is_completed: true, week: 1 },
-        { id: 2, title: 'Thiết kế hệ thống', is_completed: true, week: 2 },
-        { id: 3, title: 'Phát triển Backend', is_completed: false, week: 4 },
-      ]);
-      setTasks([
-        { id: 1, title: 'Thiết kế database', status: 'completed', assignee: { full_name: 'Nguyễn Văn A' } },
-        { id: 2, title: 'Xây dựng API', status: 'in_progress', assignee: { full_name: 'Trần Thị B' } },
-        { id: 3, title: 'Viết test', status: 'todo', assignee: { full_name: 'Lê Văn C' } },
-      ]);
+      toast.error('Không thể tải thông tin nhóm');
     } finally {
       setLoading(false);
     }
@@ -133,11 +114,14 @@ const GroupDetail = () => {
       {/* Tabs */}
       <Tabs value={activeTab} onChange={(e, v) => setActiveTab(v)} sx={{ mb: 3 }}>
         <Tab label="Tổng quan" />
+        <Tab icon={<TaskIcon />} label="Công việc" iconPosition="start" />
         <Tab icon={<ChartIcon />} label="Đóng góp thành viên" iconPosition="start" />
       </Tabs>
 
       {activeTab === 1 ? (
-        <ContributionChart groupId={id} />
+        <TaskBoard groupId={id} />
+      ) : activeTab === 2 ? (
+        <ContributionTracker groupId={id} />
       ) : (
       <Grid container spacing={3}>
         {/* Main Info */}

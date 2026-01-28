@@ -3,8 +3,9 @@ User Model - Quản lý tài khoản người dùng
 5 vai trò: Admin, Staff, Department Head, Lecturer, Student
 """
 
-from sqlmodel import SQLModel, Field, Relationship
-from typing import Optional, List, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Relationship, Column
+from sqlalchemy import JSON
+from typing import Optional, List, TYPE_CHECKING, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -46,6 +47,7 @@ class User(UserBase, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
+    user_settings: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column(JSON))
     
     # Relationships
     class_memberships: List["ClassMember"] = Relationship(back_populates="user")

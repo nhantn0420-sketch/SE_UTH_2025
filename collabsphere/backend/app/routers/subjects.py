@@ -4,7 +4,7 @@ Staff: Import, create, manage
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from sqlmodel import Session, select
+from sqlmodel import Session, select, func
 from typing import List, Optional
 from datetime import datetime
 import pandas as pd
@@ -20,6 +20,51 @@ from app.schemas.common import ResponseMessage, ImportResult
 from app.utils.dependencies import get_current_user, get_current_staff, get_current_staff_or_admin
 
 router = APIRouter()
+
+
+# ==================== STATISTICS ENDPOINT ====================
+
+@router.get("/statistics")
+async def get_subject_statistics(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_staff)
+):
+    """
+    Staff: Get statistics for subjects, classes, curricula.
+    """
+    # Count subjects
+    total_subjects = session.exec(select(func.count(Subject.id))).one()
+    active_subjects = session.exec(
+        select(func.count(Subject.id)).where(Subject.is_active == True)
+    ).one()
+    
+    # Count curricula
+    total_curricula = session.exec(select(func.count(Curriculum.id))).one()
+    
+    # Count classes (need to import)
+    from app.models.academic import Class
+    total_classes = session.exec(select(func.count(Class.id))).one()
+    active_classes = session.exec(
+        select(func.count(Class.id)).where(Class.is_active == True)
+    ).one()
+    
+    # Count lecturers and students
+    lecturers = session.exec(
+        select(func.count(User.id)).where(User.role == UserRole.LECTURER)
+    ).one()
+    students = session.exec(
+        select(func.count(User.id)).where(User.role == UserRole.STUDENT)
+    ).one()
+    
+    return {
+        "subjects": total_subjects,
+        "active_subjects": active_subjects,
+        "classes": total_classes,
+        "active_classes": active_classes,
+        "curricula": total_curricula,
+        "lecturers": lecturers,
+        "students": students
+    }
 
 
 # ==================== SUBJECT ENDPOINTS ====================

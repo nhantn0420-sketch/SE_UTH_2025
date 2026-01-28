@@ -58,38 +58,7 @@ const ProjectAssignment = () => {
       setClasses(classesData.items || classesData || []);
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      // Demo data
-      setProjects([
-        {
-          id: 1,
-          name: 'Xây dựng website bán hàng',
-          description: 'Dự án xây dựng website thương mại điện tử',
-          status: 'approved',
-          assigned_classes: [{ id: 1, code: 'CS101-01' }],
-          milestones_count: 5,
-        },
-        {
-          id: 2,
-          name: 'Ứng dụng quản lý thư viện',
-          description: 'Phát triển hệ thống quản lý thư viện số',
-          status: 'approved',
-          assigned_classes: [],
-          milestones_count: 4,
-        },
-        {
-          id: 3,
-          name: 'App di động đặt lịch',
-          description: 'Ứng dụng đặt lịch hẹn trên mobile',
-          status: 'approved',
-          assigned_classes: [{ id: 2, code: 'SE301-01' }, { id: 3, code: 'SE301-02' }],
-          milestones_count: 6,
-        },
-      ]);
-      setClasses([
-        { id: 1, code: 'CS101-01', name: 'Lập trình cơ bản - Nhóm 1' },
-        { id: 2, code: 'SE301-01', name: 'Công nghệ phần mềm - Nhóm 1' },
-        { id: 3, code: 'SE301-02', name: 'Công nghệ phần mềm - Nhóm 2' },
-      ]);
+      toast.error('Không thể tải dữ liệu dự án và lớp học');
     } finally {
       setLoading(false);
     }
@@ -111,12 +80,12 @@ const ProjectAssignment = () => {
 
   const filteredProjects = projects.filter(
     (p) =>
-      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const assignedProjects = filteredProjects.filter(p => p.assigned_classes?.length > 0);
-  const unassignedProjects = filteredProjects.filter(p => !p.assigned_classes?.length);
+  const assignedProjects = filteredProjects.filter(p => (p.assigned_class_count || 0) > 0);
+  const unassignedProjects = filteredProjects.filter(p => (p.assigned_class_count || 0) === 0);
 
   if (loading) {
     return (
@@ -180,7 +149,7 @@ const ProjectAssignment = () => {
                         <ProjectIcon color="warning" />
                       </ListItemIcon>
                       <ListItemText
-                        primary={project.name}
+                        primary={project.title}
                         secondary={
                           <>
                             {project.description?.substring(0, 50)}...
@@ -245,20 +214,19 @@ const ProjectAssignment = () => {
                         <ApprovedIcon color="success" />
                       </ListItemIcon>
                       <ListItemText
-                        primary={project.name}
+                        primary={project.title}
                         secondary={
                           <Box>
-                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', mt: 0.5 }}>
-                              {project.assigned_classes?.map((c) => (
-                                <Chip
-                                  key={c.id}
-                                  icon={<ClassIcon />}
-                                  label={c.code}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              ))}
-                            </Box>
+                            <Typography variant="body2" color="text.secondary">
+                              {project.description?.substring(0, 50)}...
+                            </Typography>
+                            <Chip
+                              icon={<ClassIcon />}
+                              label={`Đã chỉ định cho ${project.assigned_class_count || 0} lớp`}
+                              size="small"
+                              color="success"
+                              sx={{ mt: 0.5 }}
+                            />
                           </Box>
                         }
                       />
@@ -292,7 +260,7 @@ const ProjectAssignment = () => {
           open={openAssignDialog}
           onClose={handleCloseAssign}
           projectId={selectedProject.id}
-          projectName={selectedProject.name}
+          projectName={selectedProject.title}
           onAssigned={handleAssigned}
         />
       )}

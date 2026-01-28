@@ -15,16 +15,23 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Drawer,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   Search as SearchIcon,
   Add as AddIcon,
   Visibility as ViewIcon,
+  Sort as SortIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import projectService from '../../services/projectService';
 import config from '../../config';
+import AdvancedSearch from '../../components/Common/AdvancedSearch';
+import FilterPanel from '../../components/Common/FilterPanel';
+import SavedFilters from '../../components/Common/SavedFilters';
 
 const ProjectList = () => {
   const navigate = useNavigate();
@@ -33,6 +40,10 @@ const ProjectList = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterValues, setFilterValues] = useState({});
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
 
   useEffect(() => {
     fetchProjects();
@@ -52,12 +63,70 @@ const ProjectList = () => {
     }
   };
 
+  // Handle search
+  const handleSearch = (searchData) => {
+    setSearchQuery(searchData.term);
+  };
+
+  // Handle filter changes
+  const handleFilterChange = (filters) => {
+    setFilterValues(filters);
+  };
+
+  // Apply saved filter
+  const handleApplySavedFilter = (filters) => {
+    setFilterValues(filters);
+  };
+
+  // Advanced filtering and sorting
   const filteredProjects = projects.filter((project) => {
+    // Search filter
     const matchesSearch =
       project.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || project.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Status filter
+    const matchesStatus = !filterValues.status || project.status === filterValues.status;
+    
+    // Lecturer filter
+    const matchesLecturer = !filterValues.lecturer || 
+      project.lecturer?.id === filterValues.lecturer;
+    
+    // Date range filter
+    const matchesDateRange = () => {
+      if (!filterValues.dateRange?.start && !filterValues.dateRange?.end) return true;
+      const projectDate = new Date(project.created_at);
+      const start = filterValues.dateRange?.start ? new Date(filterValues.dateRange.start) : null;
+      const end = filterValues.dateRange?.end ? new Date(filterValues.dateRange.end) : null;
+      
+      if (start && projectDate < start) return false;
+      if (end && projectDate > end) return false;
+      return true;
+    };
+    
+    // Max members filter
+    const matchesMaxMembers = !filterValues.maxMembers || 
+      project.max_members <= parseInt(filterValues.maxMembers);
+
+    return matchesSearch && matchesStatus && matchesLecturer && 
+           matchesDateRange() && matchesMaxMembers;
+  }).sort((a, b) => {
+    // Sorting
+    let comparison = 0;
+    switch (sortBy) {
+      case 'title':
+        comparison = (a.title || '').localeCompare(b.title || '');
+        break;
+      case 'created_at':
+        comparison = new Date(b.created_at) - new Date(a.created_at);
+        break;
+      case 'max_members':
+        comparison = (b.max_members || 0) - (a.max_members || 0);
+        break;
+      default:
+        comparison = 0;
+    }
+    return sortOrder === 'asc' ? -comparison : comparison;
   });
 
   const getStatusColor = (status) => {
@@ -106,39 +175,101 @@ const ProjectList = () => {
         )}
       </Box>
 
-      {/* Filters */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <TextField
-          placeholder="Tìm kiếm đề tài..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          size="small"
-          sx={{ flexGrow: 1 }}
-        />
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>Trạng thái</InputLabel>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            label="Trạng thái"
-          >
-            <MenuItem value="all">Tất cả</MenuItem>
-            <MenuItem value="draft">Bản nháp</MenuItem>
-            <MenuItem value="pending">Chờ duyệt</MenuItem>
-            <MenuItem value="approved">Đã duyệt</MenuItem>
-            <MenuItem value="active">Đang hoạt động</MenuItem>
-            <MenuItem value="rejected">Từ chối</MenuItem>
-            <MenuItem value="completed">Hoàn thành</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
+      {/* Advanced Search & Filters */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={showFilters ? 9 : 12}>
+          <AdvancedSearch
+            placeholder="Tìm kiếm đề tài theo tên, mô tả..."
+            onSearch={handleSearch}
+            onFilterToggle={() => setShowFilters(!showFilters)}
+            showFilters={showFilters}
+            fields={['title', 'description']}
+            enableTags={false}
+            searchDelay={300}
+          />
+          
+          {/* Sort & Saved Filters */}
+          <Box sx={{ display: 'flex', gap: 1, mt: 2, alignItems: 'center' }}>
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel>Sắp xếp</InputLabel>
+              <Select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                label="Sắp xếp"
+              >
+                <MenuItem value="created_at">Ngày tạo</MenuItem>
+                <MenuItem value="title">Tiêu đề</MenuItem>
+                <MenuItem value="max_members">Số thành viên</MenuItem>
+              </Select>
+            </FormControl>
+            
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <InputLabel>Thứ tự</InputLabel>
+              <Select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                label="Thứ tự"
+              >
+                <MenuItem value="desc">Giảm dần</MenuItem>
+                <MenuItem value="asc">Tăng dần</MenuItem>
+              </Select>
+            </FormControl>
+
+            <SavedFilters
+              currentFilters={filterValues}
+              onApplyFilter={handleApplySavedFilter}
+              storageKey="projectListFilters"
+            />
+
+            <Box sx={{ flexGrow: 1 }} />
+            
+            <Chip
+              label={`${filteredProjects.length} / ${projects.length} đề tài`}
+              color="primary"
+              variant="outlined"
+            />
+          </Box>
+        </Grid>
+
+        {/* Filter Sidebar */}
+        {showFilters && (
+          <Grid item xs={12} md={3}>
+            <FilterPanel
+              filters={[
+                {
+                  key: 'status',
+                  label: 'Trạng thái',
+                  type: 'select',
+                  options: [
+                    { value: 'draft', label: 'Bản nháp' },
+                    { value: 'pending', label: 'Chờ duyệt' },
+                    { value: 'approved', label: 'Đã duyệt' },
+                    { value: 'active', label: 'Đang hoạt động' },
+                    { value: 'rejected', label: 'Từ chối' },
+                    { value: 'completed', label: 'Hoàn thành' },
+                  ],
+                },
+                {
+                  key: 'dateRange',
+                  label: 'Ngày tạo',
+                  type: 'date-range',
+                  defaultValue: {},
+                },
+                {
+                  key: 'maxMembers',
+                  label: 'Số thành viên tối đa',
+                  type: 'text',
+                  placeholder: 'VD: 5',
+                },
+              ]}
+              onFilterChange={handleFilterChange}
+              onClear={() => setFilterValues({})}
+              compact={false}
+              collapsible={false}
+            />
+          </Grid>
+        )}
+      </Grid>
 
       {/* Project Grid */}
       {filteredProjects.length === 0 ? (

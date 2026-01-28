@@ -15,7 +15,7 @@ from app.models.user import User, UserRole
 from app.models.subject import Curriculum
 from app.models.project import (
     Project, ProjectCreate, ProjectUpdate, ProjectResponse, ProjectStatus,
-    ProjectMilestone, MilestoneQuestion
+    ProjectMilestone, MilestoneQuestion, MilestoneCreate, MilestoneUpdate
 )
 from app.models.academic import Class, ClassProject
 from app.schemas.common import ResponseMessage
@@ -27,6 +27,112 @@ from app.utils.dependencies import (
 )
 
 router = APIRouter()
+
+
+# Helper function to add counts to project
+def enrich_project_response(project: Project, session: Session) -> dict:
+    """Add milestone_count and assigned_class_count to project dict"""
+    milestone_count = session.exec(
+        select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == project.id)
+    ).one()
+    assigned_class_count = session.exec(
+        select(func.count(ClassProject.id)).where(ClassProject.project_id == project.id)
+    ).one()
+    
+    proj_dict = project.dict()
+    proj_dict['milestone_count'] = milestone_count
+    proj_dict['assigned_class_count'] = assigned_class_count
+    return proj_dict
+
+
+
+# ==================== STATISTICS ENDPOINTS ====================
+
+@router.get("/statistics/head")
+async def get_head_statistics(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_head)
+):
+    """
+    Head: Get project statistics (pending, approved, rejected).
+    """
+    pending = session.exec(
+        select(func.count(Project.id)).where(Project.status == ProjectStatus.PENDING)
+    ).one()
+    approved = session.exec(
+        select(func.count(Project.id)).where(Project.status == ProjectStatus.APPROVED)
+    ).one()
+    rejected = session.exec(
+        select(func.count(Project.id)).where(Project.status == ProjectStatus.REJECTED)
+    ).one()
+    draft = session.exec(
+        select(func.count(Project.id)).where(Project.status == ProjectStatus.DRAFT)
+    ).one()
+    
+    return {
+        "pending": pending,
+        "approved": approved,
+        "rejected": rejected,
+        "draft": draft,
+        "total": pending + approved + rejected + draft
+    }
+
+
+@router.get("/statistics/lecturer")
+async def get_lecturer_statistics(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_lecturer)
+):
+    """
+    Lecturer: Get my project and group statistics.
+    """
+    # My projects count
+    total_projects = session.exec(
+        select(func.count(Project.id)).where(Project.creator_id == current_user.id)
+    ).one()
+    pending_projects = session.exec(
+        select(func.count(Project.id)).where(
+            Project.creator_id == current_user.id,
+            Project.status == ProjectStatus.PENDING
+        )
+    ).one()
+    approved_projects = session.exec(
+        select(func.count(Project.id)).where(
+            Project.creator_id == current_user.id,
+            Project.status == ProjectStatus.APPROVED
+        )
+    ).one()
+    draft_projects = session.exec(
+        select(func.count(Project.id)).where(
+            Project.creator_id == current_user.id,
+            Project.status == ProjectStatus.DRAFT
+        )
+    ).one()
+    
+    # My classes and groups
+    from app.models.academic import Class
+    from app.models.group import Group
+    
+    my_classes = session.exec(
+        select(func.count(Class.id)).where(Class.lecturer_id == current_user.id)
+    ).one()
+    
+    # Groups in my classes
+    my_class_ids = session.exec(
+        select(Class.id).where(Class.lecturer_id == current_user.id)
+    ).all()
+    groups = session.exec(
+        select(func.count(Group.id)).where(Group.class_id.in_(my_class_ids))
+    ).one() if my_class_ids else 0
+    
+    return {
+        "total_projects": total_projects,
+        "pending_projects": pending_projects,
+        "approved_projects": approved_projects,
+        "draft_projects": draft_projects,
+        "classes": my_classes,
+        "groups": groups
+    }
 
 
 # ==================== PROJECT MANAGEMENT ====================
@@ -50,15 +156,11 @@ async def get_my_projects(
     statement = statement.offset(skip).limit(limit)
     projects = session.exec(statement).all()
     
-    # Add milestone count
-    result = []
-    for proj in projects:
-        count = session.exec(
-            select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == proj.id)
-        ).one()
-        proj_dict = proj.dict()
-        proj_dict['milestone_count'] = count
-        result.append(ProjectResponse(**proj_dict))
+    # Add milestone and class counts
+    result = [
+        ProjectResponse(**enrich_project_response(proj, session))
+        for proj in projects
+    ]
     
     return result
 
@@ -98,15 +200,33 @@ async def get_projects(
     statement = statement.offset(skip).limit(limit)
     projects = session.exec(statement).all()
     
-    # Add milestone count
-    result = []
-    for proj in projects:
-        count = session.exec(
-            select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == proj.id)
-        ).one()
-        proj_dict = proj.dict()
-        proj_dict['milestone_count'] = count
-        result.append(ProjectResponse(**proj_dict))
+    # Add milestone and class counts
+    result = [
+        ProjectResponse(**enrich_project_response(proj, session))
+        for proj in projects
+    ]
+    
+    return result
+
+
+# ==================== HEAD APPROVAL ====================
+
+@router.get("/pending", response_model=List[ProjectResponse])
+async def get_pending_projects(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_head)
+):
+    """
+    Head: Get all pending projects for approval.
+    """
+    projects = session.exec(
+        select(Project).where(Project.status == ProjectStatus.PENDING)
+    ).all()
+    
+    result = [
+        ProjectResponse(**enrich_project_response(proj, session))
+        for proj in projects
+    ]
     
     return result
 
@@ -130,13 +250,7 @@ async def get_project(
     if current_user.role == UserRole.STUDENT and project.status != ProjectStatus.APPROVED:
         raise HTTPException(status_code=403, detail="Project not available")
     
-    count = session.exec(
-        select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == project.id)
-    ).one()
-    
-    proj_dict = project.dict()
-    proj_dict['milestone_count'] = count
-    return ProjectResponse(**proj_dict)
+    return ProjectResponse(**enrich_project_response(project, session))
 
 
 @router.post("/", response_model=ProjectResponse)
@@ -241,32 +355,6 @@ async def submit_project_for_approval(
     session.commit()
     
     return ResponseMessage(message="Project submitted for approval")
-
-
-# ==================== HEAD APPROVAL ====================
-
-@router.get("/pending", response_model=List[ProjectResponse])
-async def get_pending_projects(
-    session: Session = Depends(get_session),
-    current_user: User = Depends(get_current_head)
-):
-    """
-    Head: Get all pending projects for approval.
-    """
-    projects = session.exec(
-        select(Project).where(Project.status == ProjectStatus.PENDING)
-    ).all()
-    
-    result = []
-    for proj in projects:
-        count = session.exec(
-            select(func.count(ProjectMilestone.id)).where(ProjectMilestone.project_id == proj.id)
-        ).one()
-        proj_dict = proj.dict()
-        proj_dict['milestone_count'] = count
-        result.append(ProjectResponse(**proj_dict))
-    
-    return result
 
 
 @router.post("/{project_id}/approve", response_model=ResponseMessage)
@@ -430,10 +518,7 @@ async def get_project_milestones(
 @router.post("/{project_id}/milestones")
 async def create_milestone(
     project_id: int,
-    title: str,
-    description: Optional[str] = None,
-    week_number: int = 1,
-    deliverables: Optional[str] = None,
+    milestone_data: MilestoneCreate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_lecturer)
 ):
@@ -457,10 +542,10 @@ async def create_milestone(
     
     milestone = ProjectMilestone(
         project_id=project_id,
-        title=title,
-        description=description,
-        week_number=week_number,
-        deliverables=deliverables,
+        title=milestone_data.title,
+        description=milestone_data.description,
+        week_number=milestone_data.week_number,
+        deliverables=milestone_data.deliverables,
         order=max_order + 1
     )
     
@@ -474,10 +559,7 @@ async def create_milestone(
 @router.patch("/milestones/{milestone_id}")
 async def update_milestone(
     milestone_id: int,
-    title: Optional[str] = None,
-    description: Optional[str] = None,
-    week_number: Optional[int] = None,
-    deliverables: Optional[str] = None,
+    milestone_data: MilestoneUpdate,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_lecturer)
 ):
@@ -492,14 +574,10 @@ async def update_milestone(
     if project.creator_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    if title:
-        milestone.title = title
-    if description is not None:
-        milestone.description = description
-    if week_number:
-        milestone.week_number = week_number
-    if deliverables is not None:
-        milestone.deliverables = deliverables
+    # Update fields
+    update_data = milestone_data.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(milestone, key, value)
     
     session.add(milestone)
     session.commit()

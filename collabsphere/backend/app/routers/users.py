@@ -5,7 +5,7 @@ Staff: Import, create, manage lecturer/student accounts
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, SQLModel
 from typing import List, Optional
 from datetime import datetime
 import pandas as pd
@@ -23,6 +23,43 @@ from app.utils.dependencies import (
 )
 
 router = APIRouter()
+
+
+# ==================== STATISTICS ENDPOINT ====================
+
+@router.get("/statistics")
+async def get_user_statistics(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_admin)
+):
+    """
+    Admin: Get user statistics by role and status.
+    """
+    # Total users
+    total_users = session.exec(select(func.count(User.id))).one()
+    
+    # Users by role
+    by_role = {}
+    for role in UserRole:
+        count = session.exec(
+            select(func.count(User.id)).where(User.role == role)
+        ).one()
+        by_role[role.value] = count
+    
+    # Active/Inactive users
+    active_users = session.exec(
+        select(func.count(User.id)).where(User.is_active == True)
+    ).one()
+    inactive_users = session.exec(
+        select(func.count(User.id)).where(User.is_active == False)
+    ).one()
+    
+    return {
+        "total_users": total_users,
+        "by_role": by_role,
+        "active_users": active_users,
+        "inactive_users": inactive_users
+    }
 
 
 # ==================== ADMIN ENDPOINTS ====================
@@ -358,22 +395,43 @@ async def get_current_user_profile(
 
 @router.put("/me", response_model=UserResponse)
 async def update_my_profile(
-    user_data: UserUpdate,
+    full_name: Optional[str] = None,
+    phone: Optional[str] = None,
+    avatar: Optional[UploadFile] = File(None),
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
     """
     Update current user's profile information.
+    Supports avatar upload via multipart/form-data.
     """
-    update_data = user_data.dict(exclude_unset=True)
+    # Update fields
+    if full_name is not None:
+        current_user.full_name = full_name
+    if phone is not None:
+        current_user.phone = phone
     
-    # Don't allow changing username, email, role
-    restricted_fields = ["username", "email", "role", "hashed_password", "is_active"]
-    for field in restricted_fields:
-        update_data.pop(field, None)
-    
-    for key, value in update_data.items():
-        setattr(current_user, key, value)
+    # Handle avatar upload
+    if avatar:
+        import os
+        from pathlib import Path
+        
+        # Create uploads directory if not exists
+        upload_dir = Path("uploads/avatars")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Generate unique filename
+        file_ext = os.path.splitext(avatar.filename)[1]
+        filename = f"avatar_{current_user.id}_{datetime.utcnow().timestamp()}{file_ext}"
+        file_path = upload_dir / filename
+        
+        # Save file
+        with open(file_path, "wb") as f:
+            content = await avatar.read()
+            f.write(content)
+        
+        # Update avatar_url
+        current_user.avatar_url = f"/uploads/avatars/{filename}"
     
     current_user.updated_at = datetime.utcnow()
     session.add(current_user)
@@ -383,10 +441,15 @@ async def update_my_profile(
     return current_user
 
 
+class PasswordChangeRequest(SQLModel):
+    """Schema for password change request"""
+    current_password: str
+    new_password: str
+
+
 @router.post("/change-password", response_model=ResponseMessage)
 async def change_password(
-    current_password: str,
-    new_password: str,
+    password_data: PasswordChangeRequest,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -396,26 +459,26 @@ async def change_password(
     from app.utils.security import verify_password
     
     # Verify current password
-    if not verify_password(current_password, current_user.hashed_password):
+    if not verify_password(password_data.current_password, current_user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Current password is incorrect"
+            detail="Mật khẩu hiện tại không chính xác"
         )
     
     # Validate new password
-    if len(new_password) < 6:
+    if len(password_data.new_password) < 6:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be at least 6 characters"
+            detail="Mật khẩu mới phải có ít nhất 6 ký tự"
         )
     
     # Update password
-    current_user.hashed_password = get_password_hash(new_password)
+    current_user.hashed_password = get_password_hash(password_data.new_password)
     current_user.updated_at = datetime.utcnow()
     session.add(current_user)
     session.commit()
     
-    return ResponseMessage(message="Password changed successfully")
+    return ResponseMessage(message="Đổi mật khẩu thành công")
 
 
 @router.get("/settings")
@@ -440,17 +503,13 @@ async def get_user_settings(
         "timezone": "Asia/Ho_Chi_Minh",
     }
     
-    # Get settings from user metadata (if exists)
+    # Get settings from user_settings
     notifications = default_notifications
     preferences = default_preferences
     
-    # Try to get from metadata if column exists
-    try:
-        if hasattr(current_user, "metadata") and current_user.metadata:
-            notifications = current_user.metadata.get("notifications", default_notifications)
-            preferences = current_user.metadata.get("preferences", default_preferences)
-    except:
-        pass
+    if current_user.user_settings:
+        notifications = current_user.user_settings.get("notifications", default_notifications)
+        preferences = current_user.user_settings.get("preferences", default_preferences)
     
     return {
         "notifications": notifications,
@@ -467,20 +526,23 @@ async def update_notification_settings(
     """
     Update user's notification settings.
     """
-    try:
-        # Try to update metadata if column exists
-        if hasattr(current_user, "metadata"):
-            if current_user.metadata is None:
-                current_user.metadata = {}
-            current_user.metadata["notifications"] = settings
-            current_user.updated_at = datetime.utcnow()
-            session.add(current_user)
-            session.commit()
-    except:
-        pass  # If metadata column doesn't exist, just return success
+    # Initialize user_settings if None
+    if current_user.user_settings is None:
+        current_user.user_settings = {}
+    
+    # Update notifications in user_settings
+    current_user.user_settings["notifications"] = settings
+    current_user.updated_at = datetime.utcnow()
+    
+    # Mark as modified for SQLAlchemy to detect changes
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(current_user, "user_settings")
+    
+    session.add(current_user)
+    session.commit()
     
     return {
-        "message": "Notification settings updated successfully",
+        "message": "Cập nhật cài đặt thông báo thành công",
         "notifications": settings
     }
 
@@ -494,19 +556,22 @@ async def update_app_preferences(
     """
     Update user's app preferences (theme, language, timezone).
     """
-    try:
-        # Try to update metadata if column exists
-        if hasattr(current_user, "metadata"):
-            if current_user.metadata is None:
-                current_user.metadata = {}
-            current_user.metadata["preferences"] = preferences
-            current_user.updated_at = datetime.utcnow()
-            session.add(current_user)
-            session.commit()
-    except:
-        pass  # If metadata column doesn't exist, just return success
+    # Initialize user_settings if None
+    if current_user.user_settings is None:
+        current_user.user_settings = {}
+    
+    # Update preferences in user_settings
+    current_user.user_settings["preferences"] = preferences
+    current_user.updated_at = datetime.utcnow()
+    
+    # Mark as modified for SQLAlchemy to detect changes
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(current_user, "user_settings")
+    
+    session.add(current_user)
+    session.commit()
     
     return {
-        "message": "App preferences updated successfully",
+        "message": "Cập nhật cài đặt ứng dụng thành công",
         "preferences": preferences
     }

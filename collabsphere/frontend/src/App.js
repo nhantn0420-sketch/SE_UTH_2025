@@ -26,6 +26,7 @@ import SystemReports from './pages/Admin/SystemReports';
 // Subject & Class Management
 import SubjectManagement from './pages/Staff/SubjectManagement';
 import ClassManagement from './pages/Staff/ClassManagement';
+import ClassResources from './pages/Classes/ClassResources';
 import CurriculumManagement from './pages/Staff/CurriculumManagement';
 
 // Project Management
@@ -41,6 +42,15 @@ import GroupList from './pages/Groups/GroupList';
 import GroupDetail from './pages/Groups/GroupDetail';
 import GroupWorkspace from './pages/Groups/GroupWorkspace';
 
+// Task Management
+import TaskManagement from './pages/Tasks/TaskManagement';
+
+// Contribution Tracking
+import ContributionTracking from './pages/Contribution/ContributionTracking';
+
+// Notifications
+import NotificationPage from './pages/Notification/NotificationPage';
+
 // Collaboration
 import Chat from './pages/Collaboration/Chat';
 import VideoCall from './pages/Collaboration/VideoCall';
@@ -51,6 +61,10 @@ import AIChatbot from './pages/AI/AIChatbot';
 // Profile
 import Profile from './pages/Profile/Profile';
 import Settings from './pages/Settings/Settings';
+
+// Demo
+import FileUploadDemo from './pages/Demo/FileUploadDemo';
+import SearchFilterDemo from './pages/Demo/SearchFilterDemo';
 
 // Context
 import { useAuth } from './context/AuthContext';
@@ -124,11 +138,19 @@ function App() {
         {/* Shared routes */}
         <Route path="/projects" element={<ProjectList />} />
         <Route path="/projects/create" element={<ProtectedRoute allowedRoles={['lecturer']}><ProjectCreate /></ProtectedRoute>} />
+        <Route path="/projects/:id/edit" element={<ProtectedRoute allowedRoles={['lecturer', 'head']}><ProjectCreate /></ProtectedRoute>} />
         <Route path="/projects/:id" element={<ProjectDetail />} />
 
         <Route path="/groups" element={<GroupList />} />
         <Route path="/groups/:id" element={<GroupDetail />} />
         <Route path="/groups/:id/workspace" element={<GroupWorkspace />} />
+
+        <Route path="/classes/:id/resources" element={<ClassResources />} />
+
+        <Route path="/tasks" element={<ProtectedRoute allowedRoles={['lecturer', 'head']}><TaskManagement /></ProtectedRoute>} />
+        <Route path="/contributions" element={<ProtectedRoute allowedRoles={['lecturer', 'head']}><ContributionTracking /></ProtectedRoute>} />
+
+        <Route path="/notifications" element={<NotificationPage />} />
 
         <Route path="/chat/:groupId" element={<Chat />} />
         <Route path="/video/:groupId" element={<VideoCall />} />
@@ -137,6 +159,10 @@ function App() {
 
         <Route path="/profile" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
+
+        {/* Demo routes (remove in production) */}
+        <Route path="/demo/file-upload" element={<FileUploadDemo />} />
+        <Route path="/demo/search-filter" element={<SearchFilterDemo />} />
       </Route>
 
       {/* 404 */}

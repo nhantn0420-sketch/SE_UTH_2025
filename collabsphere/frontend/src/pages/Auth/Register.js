@@ -46,8 +46,10 @@ const Register = () => {
     setLoading(true);
     setErrorMessage('');
     try {
-      // Generate username from email (part before @)
-      const username = data.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.floor(Math.random() * 1000);
+      // Generate unique username from email + timestamp (more reliable than random)
+      const emailPart = data.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+      const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+      const username = emailPart + timestamp;
       
       await registerUser({
         username: username,
@@ -60,7 +62,10 @@ const Register = () => {
       toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
       navigate('/login');
     } catch (err) {
-      setErrorMessage(err.response?.data?.detail || 'Đăng ký thất bại. Vui lòng thử lại.');
+      console.error('Registration error:', err);
+      const errorMsg = err.response?.data?.detail || err.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

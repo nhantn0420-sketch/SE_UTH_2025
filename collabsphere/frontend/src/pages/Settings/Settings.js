@@ -27,7 +27,10 @@ import {
   Person as PersonIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import api from '../../services/api';
+import config from '../../config';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -45,6 +48,8 @@ function TabPanel({ children, value, index, ...other }) {
 
 const Settings = () => {
   const { user, updateUser } = useAuth();
+  const { mode: themeMode, setTheme } = useTheme();
+  const { language, changeLanguage, t } = useLanguage();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ open: false, text: '', severity: 'success' });
@@ -92,17 +97,49 @@ const Settings = () => {
     }
   }, [user]);
 
+  // Sync theme from context to local state
+  useEffect(() => {
+    setAppSettings(prev => ({
+      ...prev,
+      theme: themeMode
+    }));
+  }, [themeMode]);
+
   const loadSettings = async () => {
     try {
+      console.log('Loading settings from backend...');
       const response = await api.get('/users/settings');
+      console.log('Settings response:', response.data);
+      
       if (response.data.notifications) {
+        console.log('Setting notifications:', response.data.notifications);
         setNotifications(response.data.notifications);
       }
+      
       if (response.data.preferences) {
-        setAppSettings(response.data.preferences);
+        console.log('Setting preferences:', response.data.preferences);
+        const prefs = response.data.preferences;
+        setAppSettings({
+          theme: prefs.theme || themeMode,
+          language: prefs.language || language,
+          timezone: prefs.timezone || 'Asia/Ho_Chi_Minh',
+        });
+        
+        // Apply theme if saved
+        if (prefs.theme) {
+          console.log('Applying saved theme:', prefs.theme);
+          setTheme(prefs.theme);
+        }
+        
+        // Apply language if saved
+        if (prefs.language && prefs.language !== language) {
+          console.log('Applying saved language:', prefs.language);
+          changeLanguage(prefs.language);
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
+      console.error('Error details:', error.response?.data);
     }
   };
 
@@ -136,11 +173,14 @@ const Settings = () => {
   const handleSaveProfile = async () => {
     setLoading(true);
     try {
+      console.log('Saving profile...', { full_name: profile.full_name, phone: profile.phone, has_avatar: !!profile.avatar });
+      
       const formData = new FormData();
       formData.append('full_name', profile.full_name);
-      formData.append('phone', profile.phone);
+      formData.append('phone', profile.phone || '');
       if (profile.avatar) {
         formData.append('avatar', profile.avatar);
+        console.log('Uploading avatar:', profile.avatar.name);
       }
 
       const response = await api.put('/users/me', formData, {
@@ -149,10 +189,29 @@ const Settings = () => {
         },
       });
 
+      console.log('Profile update response:', response.data);
+      
+      // Update user in auth context
       updateUser(response.data);
+      
+      // Reload profile data to show updated values
+      setProfile({
+        full_name: response.data.full_name,
+        email: response.data.email,
+        phone: response.data.phone || '',
+        avatar: null, // Clear file input
+      });
+      
+      console.log('Profile updated successfully');
       setMessage({ open: true, text: 'Cập nhật thông tin thành công!', severity: 'success' });
     } catch (error) {
-      setMessage({ open: true, text: 'Lỗi khi cập nhật thông tin!', severity: 'error' });
+      console.error('Profile update error:', error);
+      console.error('Error response:', error.response?.data);
+      setMessage({ 
+        open: true, 
+        text: error.response?.data?.detail || 'Lỗi khi cập nhật thông tin!', 
+        severity: 'error' 
+      });
     } finally {
       setLoading(false);
     }
@@ -192,10 +251,18 @@ const Settings = () => {
   const handleSaveNotifications = async () => {
     setLoading(true);
     try {
+      console.log('Saving notifications...', notifications);
       await api.put('/users/settings/notifications', notifications);
+      console.log('Notifications saved successfully');
       setMessage({ open: true, text: 'Cập nhật cài đặt thông báo thành công!', severity: 'success' });
     } catch (error) {
-      setMessage({ open: true, text: 'Lỗi khi cập nhật cài đặt!', severity: 'error' });
+      console.error('Notification settings error:', error);
+      console.error('Error response:', error.response?.data);
+      setMessage({ 
+        open: true, 
+        text: error.response?.data?.detail || 'Lỗi khi cập nhật cài đặt!', 
+        severity: 'error' 
+      });
     } finally {
       setLoading(false);
     }
@@ -204,10 +271,29 @@ const Settings = () => {
   const handleSaveAppSettings = async () => {
     setLoading(true);
     try {
-      await api.put('/users/settings/preferences', appSettings);
-      setMessage({ open: true, text: 'Cập nhật cài đặt ứng dụng thành công!', severity: 'success' });
+      console.log('Saving app settings...', appSettings);
+      
+      // Apply theme immediately
+      setTheme(appSettings.theme);
+      console.log('Theme applied:', appSettings.theme);
+      
+      // Apply language immediately
+      changeLanguage(appSettings.language);
+      console.log('Language changed to:', appSettings.language);
+      
+      // Save to backend
+      const response = await api.put('/users/settings/preferences', appSettings);
+      console.log('App settings saved:', response.data);
+      
+      setMessage({ open: true, text: t('interface.success'), severity: 'success' });
     } catch (error) {
-      setMessage({ open: true, text: 'Lỗi khi cập nhật cài đặt!', severity: 'error' });
+      console.error('App settings error:', error);
+      console.error('Error response:', error.response?.data);
+      setMessage({ 
+        open: true, 
+        text: error.response?.data?.detail || t('interface.error'), 
+        severity: 'error' 
+      });
     } finally {
       setLoading(false);
     }
@@ -216,19 +302,19 @@ const Settings = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>
-        Cài đặt
+        {t('settings')}
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-        Quản lý thông tin cá nhân và tùy chỉnh hệ thống
+        {t('settings.subtitle')}
       </Typography>
 
       <Paper>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs value={activeTab} onChange={handleTabChange} aria-label="settings tabs">
-            <Tab icon={<PersonIcon />} iconPosition="start" label="Thông tin cá nhân" />
-            <Tab icon={<LockIcon />} iconPosition="start" label="Mật khẩu" />
-            <Tab icon={<NotificationsIcon />} iconPosition="start" label="Thông báo" />
-            <Tab icon={<PaletteIcon />} iconPosition="start" label="Giao diện" />
+            <Tab icon={<PersonIcon />} iconPosition="start" label={t('settings.profile')} />
+            <Tab icon={<LockIcon />} iconPosition="start" label={t('settings.password')} />
+            <Tab icon={<NotificationsIcon />} iconPosition="start" label={t('settings.notifications')} />
+            <Tab icon={<PaletteIcon />} iconPosition="start" label={t('settings.interface')} />
           </Tabs>
         </Box>
 
@@ -239,7 +325,7 @@ const Settings = () => {
               <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
                 <Avatar
                   sx={{ width: 120, height: 120, mx: 'auto', mb: 2 }}
-                  src={user?.avatar_url}
+                  src={config.getAvatarUrl(user?.avatar_url)}
                   alt={user?.full_name}
                 >
                   {user?.full_name?.charAt(0)}
@@ -257,7 +343,7 @@ const Settings = () => {
                     component="span"
                     startIcon={<PhotoCamera />}
                   >
-                    Thay đổi ảnh
+                    {t('profile.avatar.change')}
                   </Button>
                 </label>
                 {profile.avatar && (
@@ -272,7 +358,7 @@ const Settings = () => {
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Họ và tên"
+                      label={t('profile.fullname')}
                       value={profile.full_name}
                       onChange={handleProfileChange('full_name')}
                     />
@@ -280,24 +366,25 @@ const Settings = () => {
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Email"
+                      label={t('profile.email')}
                       value={profile.email}
                       disabled
-                      helperText="Email không thể thay đổi"
+                      helperText={t('profile.email.help')}
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Số điện thoại"
+                      label={t('profile.phone')}
                       value={profile.phone}
                       onChange={handleProfileChange('phone')}
+                      helperText={profile.phone ? `${t('profile.phone.current')}: ${profile.phone}` : t('profile.phone.empty')}
                     />
                   </Grid>
                   <Grid item xs={12}>
                     <TextField
                       fullWidth
-                      label="Vai trò"
+                      label={t('profile.role')}
                       value={user?.role?.toUpperCase()}
                       disabled
                     />
@@ -311,7 +398,7 @@ const Settings = () => {
                     onClick={handleSaveProfile}
                     disabled={loading}
                   >
-                    Lưu thay đổi
+                    {t('save')}
                   </Button>
                 </Box>
               </Grid>
@@ -448,10 +535,10 @@ const Settings = () => {
         <TabPanel value={activeTab} index={3}>
           <Box sx={{ p: 3, maxWidth: 600 }}>
             <Typography variant="h6" gutterBottom>
-              Cài đặt giao diện
+              {t('interface.title')}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Tùy chỉnh giao diện và ngôn ngữ ứng dụng
+              {t('interface.subtitle')}
             </Typography>
 
             <Grid container spacing={2}>
@@ -459,37 +546,40 @@ const Settings = () => {
                 <TextField
                   fullWidth
                   select
-                  label="Giao diện"
+                  label={t('interface.theme')}
                   value={appSettings.theme}
                   onChange={handleAppSettingChange('theme')}
                   SelectProps={{ native: true }}
+                  helperText={`${t('interface.theme.current')}: ${appSettings.theme === 'light' ? t('interface.theme.light') : appSettings.theme === 'dark' ? t('interface.theme.dark') : t('interface.theme.auto')}`}
                 >
-                  <option value="light">Sáng</option>
-                  <option value="dark">Tối</option>
-                  <option value="auto">Tự động</option>
+                  <option value="light">{t('interface.theme.light')}</option>
+                  <option value="dark">{t('interface.theme.dark')}</option>
+                  <option value="auto">{t('interface.theme.auto')}</option>
                 </TextField>
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
                   select
-                  label="Ngôn ngữ"
+                  label={t('interface.language')}
                   value={appSettings.language}
                   onChange={handleAppSettingChange('language')}
                   SelectProps={{ native: true }}
+                  helperText={`${t('interface.language.current')}: ${appSettings.language === 'vi' ? t('interface.language.vi') : t('interface.language.en')}`}
                 >
-                  <option value="vi">Tiếng Việt</option>
-                  <option value="en">English</option>
+                  <option value="vi">{t('interface.language.vi')}</option>
+                  <option value="en">{t('interface.language.en')}</option>
                 </TextField>
               </Grid>
               <Grid item xs={12}>
                 <TextField
                   fullWidth
                   select
-                  label="Múi giờ"
+                  label={t('interface.timezone')}
                   value={appSettings.timezone}
                   onChange={handleAppSettingChange('timezone')}
                   SelectProps={{ native: true }}
+                  helperText={`${t('interface.timezone.current')}: ${appSettings.timezone}`}
                 >
                   <option value="Asia/Ho_Chi_Minh">Việt Nam (GMT+7)</option>
                   <option value="Asia/Bangkok">Bangkok (GMT+7)</option>

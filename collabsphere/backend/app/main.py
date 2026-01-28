@@ -5,13 +5,15 @@ Hệ thống hỗ trợ học tập theo phương pháp học tập dự án
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from app.config import settings
 from app.database import create_db_and_tables
 
 # Import routers
-from app.routers import auth, users, subjects, classes, projects, groups, evaluations, resources, notifications, chat, meetings, ai
+from app.routers import auth, users, subjects, classes, projects, groups, evaluations, resources, notifications, chat, meetings, ai, reports
 
 
 @asynccontextmanager
@@ -20,7 +22,14 @@ async def lifespan(app: FastAPI):
     # Startup
     print("🚀 Starting CollabSphere API...")
     create_db_and_tables()
+    
+    # Create uploads directory if not exists
+    uploads_dir = Path("uploads")
+    uploads_dir.mkdir(exist_ok=True)
+    (uploads_dir / "avatars").mkdir(exist_ok=True)
+    (uploads_dir / "resources").mkdir(exist_ok=True)
     print("✅ Database tables created/verified")
+    print("✅ Upload directories created")
     yield
     # Shutdown
     print("👋 Shutting down CollabSphere API...")
@@ -72,6 +81,10 @@ app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["
 app.include_router(chat.router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(meetings.router, prefix="/api/v1/meetings", tags=["Meetings"])
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["AI Assistant"])
+app.include_router(reports.router, prefix="/api/v1/reports", tags=["System Reports"])
+
+# Mount static files for uploads (avatars, resources, etc.)
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/", tags=["Root"])

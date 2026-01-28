@@ -214,3 +214,24 @@ class Task(SQLModel, table=True):
         back_populates="subtasks",
         sa_relationship_kwargs={"remote_side": "Task.parent_task_id"}
     )
+
+class TaskCreate(SQLModel):
+    """Schema for creating a task"""
+    title: str
+    description: Optional[str] = None
+    card_id: Optional[int] = None
+    status: Optional[str] = "todo"
+    priority: Optional[str] = "medium"
+    assigned_to: Optional[int] = None
+    due_date: Optional[datetime] = None
+    parent_task_id: Optional[int] = None
+
+
+class TaskUpdate(SQLModel):
+    """Schema for updating a task"""
+    title: Optional[str] = None
+    description: Optional[str] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    assigned_to: Optional[int] = None
+    due_date: Optional[datetime] = None

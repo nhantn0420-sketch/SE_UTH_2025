@@ -54,21 +54,20 @@ const AssignProjectToClass = ({ open, onClose, projectId, projectName, onAssigne
       setClasses(classesData.items || classesData || []);
 
       // Fetch classes already assigned to this project
-      const projectData = await projectService.getProject(projectId);
-      const assigned = projectData.classes?.map(c => c.id) || [];
-      setAssignedClasses(assigned);
-      setSelectedClasses(assigned);
+      try {
+        const assignedData = await projectService.getProjectAssignedClasses(projectId);
+        const assigned = assignedData.map(item => item.class_id);
+        setAssignedClasses(assigned);
+        setSelectedClasses(assigned);
+      } catch (err) {
+        console.error('Failed to fetch assigned classes:', err);
+        // If API fails, continue with empty assigned list
+        setAssignedClasses([]);
+        setSelectedClasses([]);
+      }
     } catch (err) {
       console.error('Failed to fetch data:', err);
-      // Demo data
-      setClasses([
-        { id: 1, code: 'CS101-01', name: 'Lập trình cơ bản - Nhóm 1', semester: '2024.1', student_count: 35 },
-        { id: 2, code: 'CS101-02', name: 'Lập trình cơ bản - Nhóm 2', semester: '2024.1', student_count: 40 },
-        { id: 3, code: 'CS201-01', name: 'Cấu trúc dữ liệu', semester: '2024.1', student_count: 30 },
-        { id: 4, code: 'SE301-01', name: 'Công nghệ phần mềm', semester: '2024.1', student_count: 25 },
-      ]);
-      setAssignedClasses([1]);
-      setSelectedClasses([1]);
+      toast.error('Không thể tải danh sách lớp học');
     } finally {
       setLoading(false);
     }
@@ -95,12 +94,29 @@ const AssignProjectToClass = ({ open, onClose, projectId, projectName, onAssigne
   const handleAssign = async () => {
     setSubmitting(true);
     try {
-      await projectService.assignProjectToClasses(projectId, selectedClasses);
-      toast.success(`Đã chỉ định dự án cho ${selectedClasses.length} lớp`);
+      // Only assign newly selected classes (not already assigned)
+      const classesToAssign = selectedClasses.filter(id => !assignedClasses.includes(id));
+      
+      if (classesToAssign.length === 0) {
+        toast.info('Không có lớp mới để chỉ định');
+        onClose();
+        return;
+      }
+
+      const result = await projectService.assignProjectToClasses(projectId, classesToAssign);
+      
+      if (result.failed > 0) {
+        toast.warning(`Đã chỉ định ${result.assigned}/${result.total} lớp. ${result.failed} lớp thất bại.`);
+      } else {
+        toast.success(`Đã chỉ định dự án cho ${result.assigned} lớp`);
+      }
+      
       if (onAssigned) onAssigned();
       onClose();
     } catch (err) {
-      toast.error('Chỉ định dự án thất bại');
+      console.error('Assignment error:', err);
+      const errorMsg = err.message || 'Chỉ định dự án thất bại';
+      toast.error(errorMsg);
     } finally {
       setSubmitting(false);
     }

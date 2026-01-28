@@ -88,6 +88,7 @@ class ProjectResponse(ProjectBase):
     approved_at: Optional[datetime]
     created_at: datetime
     milestone_count: Optional[int] = 0
+    assigned_class_count: Optional[int] = 0  # Number of classes assigned to this project
 
 
 class ProjectMilestoneBase(SQLModel):
@@ -98,6 +99,22 @@ class ProjectMilestoneBase(SQLModel):
     week_number: int = Field(ge=1)
     deliverables: Optional[str] = None    # JSON string for deliverables list
     order: int = Field(default=1)
+
+
+class MilestoneCreate(SQLModel):
+    """Schema for creating a milestone"""
+    title: str = Field(max_length=200)
+    description: Optional[str] = None
+    week_number: int = Field(default=1, ge=1)
+    deliverables: Optional[str] = None
+
+
+class MilestoneUpdate(SQLModel):
+    """Schema for updating a milestone"""
+    title: Optional[str] = Field(default=None, max_length=200)
+    description: Optional[str] = None
+    week_number: Optional[int] = Field(default=None, ge=1)
+    deliverables: Optional[str] = None
 
 
 class ProjectMilestone(ProjectMilestoneBase, table=True):
