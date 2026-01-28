@@ -33,7 +33,7 @@ httpx==0.26.0
 cloudinary==1.38.0
 
 # Email
-aiosmtplib==3.0.1
+aiosmtplib==5.1.0
 
 # Async utilities
 aiofiles==23.2.1
